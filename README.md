@@ -54,7 +54,11 @@ Once the data files have been generated, the application can be started with the
 `python run.py [settings.cfg]`
 
 
-### Example
+## Example
+
+![Screenshot](ftp://ftp.jax.org/mvincent/qtl-viewer/qtl-viewer-screenshot.png)
+
+### Example Data
 
 Example data and a settings file can be located at:
 
