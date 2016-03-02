@@ -56,7 +56,7 @@ Once the data files have been generated, the application can be started with the
 
 ## Example
 
-![Screenshot](ftp://ftp.jax.org/mvincent/qtl-viewer/qtl-viewer-screenshot.png)
+<img src="ftp://ftp.jax.org/mvincent/qtl-viewer/qtl-viewer-screenshot.png">
 
 ### Example Data
 
