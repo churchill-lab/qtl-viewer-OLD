@@ -1,0 +1,71 @@
+{%- if callbackFunction -%}
+{{callbackFunction}}(
+{%- endif -%}
+{
+  "query": {
+      "term":"{%- if result -%}{{result.query.term}}{%- endif -%}",
+      "species":"{%- if result -%}{{result.query.species_id}}{%- endif -%}",
+      "exact":"{%- if result -%}{{result.query.exact}}{%- endif -%}",
+      "verbose":"{%- if result -%}{{result.query.verbose}}{%- endif -%}"
+  },
+  "result": {
+      "matches": [
+        {% for match in result.matches -%}
+            {"ensembl_id":"{{match.ensembl_gene_id}}"
+            {%- if match.external_id -%}
+                ,"external_id":"{{match.external_id}}"
+            {%- endif -%}
+            {%- if match.species_id -%}
+                ,"species_id":"{{match.species_id}}"
+            {%- endif -%}
+            {%- if match.symbol -%}
+                ,"symbol":"{{match.symbol | safe}}"
+            {%- endif -%}
+            {%- if match.name -%}
+                ,"name":"{{match.name| safe}}"
+            {%- endif -%}
+            {%- if match.description -%}
+                ,"description":"{{match.description|replace("\"", "\\\"")|safe}}"
+            {%- endif -%}
+            {%- if match.synonyms -%}
+                ,"synonyms":[
+                {%- for synonym in match.synonyms -%}
+                    "{{synonym| safe}}"
+                {%- if not loop.last %},{%- endif %}
+                {%- endfor -%}
+                ]
+            {%- endif -%}
+            {%- if match.chromosome -%}
+                ,"chromosome":"{{match.chromosome}}"
+            {%- endif -%}
+            {%- if match.position_start -%}
+                ,"position_start":"{{match.position_start}}"
+            {%- endif -%}
+            {%- if match.position_end -%}
+                ,"position_end":"{{match.position_end}}"
+            {%- endif -%}
+            {%- if match.strand -%}
+                ,"strand":"{{match.strand}}"
+            {%- endif -%}
+            {%- if match.match_reason -%}
+                ,"match_reason":"{{match.match_reason}}"
+            {%- endif -%}
+            {%- if match.match_value -%}
+                ,"match_value":"{{match.match_value}}"
+            {%- endif -%}
+            }
+        {%- if not loop.last %},{%- endif %}
+        {% endfor -%}
+      ]
+  },
+  "status":{
+      "error":"{{status.error}}",
+      "message":"{{status.message}}"
+  }
+}
+{%- if callbackFunction -%}
+)
+{%- endif %}
+
+
+

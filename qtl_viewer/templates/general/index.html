@@ -1,0 +1,2571 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/jquery.tablesorter/css/theme.bootstrap.css">
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/jquery.tablesorter/addons/pager/jquery.tablesorter.pager.css">
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/bootstrap-slider/css/bootstrap-slider.css">
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/bootstrap-multiselect/css/bootstrap-multiselect.css">
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/bootstrap-select/css/bootstrap-select.min.css">
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/jquery-fa-loading/jquery.faloading.min.css">
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/css/style.css">
+    <!--
+    <link href='https://fonts.googleapis.com/css?family=Ubuntu' rel='stylesheet' type='text/css'>
+    //-->
+{% endblock %}
+
+{% block content %}
+    {% if all_datasets | length <= 1 %}
+        <div class="page-header">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="app_header">{{ g.CONF.WWW_APP_HEADER }}</div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="page-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="app_header">{{ g.CONF.WWW_APP_HEADER }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="actions">
+                    <p class="dataset_text">{{ g.CONF.WWW_DATASET_TEXT }}</p>
+                        <select name="dataset" id="dataset_select">
+                        {% for k,v in all_datasets.iteritems() %}
+                            {% if k == dataset %}
+                            <option selected value="{{ k }}">{{ v }}</option>
+                            {% else %}
+                            <option value="{{ k }}">{{ v }}</option>
+                            {% endif %}
+                        {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- START FIRST ROW //-->
+    <div class="row">
+        <div class="col-sm-6">
+            <!-- START MATRIX PLOT //-->
+            <div id="portletMatrix" class="portlet margin-bottom-30">
+                <div class="portlet-title">
+                    <div class="caption">
+                        <i class="glyphicon glyphicon-cog"></i>
+                        <span class="caption-subject bold font-yellow-crusta uppercase">{{ g.CONF.WWW_MATRIX_HEADER }}</span>
+                        <span class="caption-helper"></span>
+                    </div>
+                    <ul class="nav nav-tabs">
+                        <li class="active">
+                            <a href="#portlet_tab_matrix" data-toggle="tab">{{ g.CONF.WWW_MATRIX_DATA_TAB_TEXT }}</a>
+                        </li>
+                        <li>
+                            <a href="#portlet_tab_list" data-toggle="tab">{{ g.CONF.WWW_MATRIX_LIST_TAB_TEXT }}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="portlet-body">
+                    <div class="row" id="lod_threshold_div" style="padding-bottom:10px">
+                        <div class="col-md-5">
+                            <strong>{{ g.CONF.WWW_LOD_THRESHOLD_SLIDER_TEXT }}:</strong> <span id="currentLodScore">{{ lod_threshold }}</span>
+                        </div>
+                        <div class="col-md-7">
+                            <b>{{ g.CONF.WWW_LOD_THRESHOLD_SLIDER_MIN }}</b> <input id="lodSlider" type="text"/> <b>{{ g.CONF.WWW_LOD_THRESHOLD_SLIDER_MAX }}</b>
+                        </div>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="portlet_tab_matrix">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div id="plotMatrixWrapper">
+                                        <div id="plotMatrix"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="portlet_tab_list">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div id="dataMatrix" style="overflow-y:auto;overflow-x:hidden;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END MATRIX PLOT //-->
+        </div>
+        <div class="col-sm-6">
+            <!-- START SEARCH //-->
+            <div id="portletSearch" class="portlet margin-bottom-30">
+                <div class="portlet-title">
+                    <div class="caption">
+                        <i class="glyphicon glyphicon-search"></i>
+                        <span class="caption-subject bold font-yellow-crusta uppercase">{{ g.CONF.WWW_SEARCH_HEADER }}</span>
+                        <span class="caption-helper"></span>
+                    </div>
+                    <ul class="nav nav-tabs">
+                        <li class="active">
+                            <a href="#portlet_tab1" data-toggle="tab">{{ g.CONF.WWW_SEARCH_SEARCH_TAB_TEXT }}</a>
+                        </li>
+                        <li>
+                            <a href="#portlet_tab2" data-toggle="tab">{{ g.CONF.WWW_SEARCH_HISTORY_TAB_TEXT }}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="portlet-body">
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="portlet_tab1">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="input-group">
+                                        <input type="text" id="searchTerm" class="form-control input-circle-left" placeholder="Example: Kit, Ren1"  value="{{ search_term }}">
+                                        <span class="input-group-btn">
+                                            <button id="btnGo" class="btn btn-circle-right btn-default" data-loading-text="<i class='fa fa-spinner fa-spin'></i>" type="submit">{{ g.CONF.WWW_SEARCH_BUTTON_FIND_TEXT }}</button>
+                                        </span>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12" id="searchResultsStatus"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div id="searchResults" style="overflow-y:auto;overflow-x:hidden;"></div>
+                                </div>
+                            </div>
+                            <!--
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <label class="checkbox" for="checkboxShow"><input type="checkbox" value="" id="checkboxShow" data-toggle="checkbox"> Show ONLY the results</label></td><td colspan=2>
+                                    <label class="checkbox" for="checkboxHighlight"><input type="checkbox" value="" id="checkboxHighlight" data-toggle="checkbox">Highlight the results</label>
+                                </div>
+                            </div>
+                            //-->
+                        </div>
+                        <div class="tab-pane" id="portlet_tab2">
+                            <div class="row">
+                                <div class="col-sm-12" id="searchHistoryStatus"></div>
+                            </div>
+                            <div class="row">
+                                 <div id="feature_history_div" style="overflow-y:auto;overflow-x:hidden;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END SEARCH //-->
+        </div>
+    </div>
+    <!-- END FIRST ROW //-->
+    <!-- START SECOND ROW //-->
+    <div class="row">
+        <div class="col-sm-12 margin-bottom-30">
+            <!-- START LOD PLOT //-->
+            <div class="portlet">
+                <div class="portlet-title">
+                    <div class="caption">
+                        <i class="fa fa-area-chart"></i>
+                        <span class="caption-subject bold font-yellow-crusta uppercase">{{ g.CONF.WWW_LOD_HEADER }}</span>
+                    </div>
+                    <div class="actions">
+                        <a id="downloadLODPlot" href="#" class="btn btn-blue btn-circle">
+                            <i class="glyphicon glyphicon-download-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="portlet-body">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <span id="featureInformation"></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div id="plotLOD"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END LOD PLOT //-->
+        </div>
+    </div>
+    <!-- END SECOND ROW //-->
+    <div class="row">
+        <div class="col-sm-12 margin-bottom-30">
+            {% if render_effect_plot %}
+            <!-- START EFFECT PLOT //-->
+            <div class="portlet">
+                <div class="portlet-title">
+                    <div class="caption">
+                        <i class="fa fa-line-chart"></i>
+                        <span class="caption-subject bold font-yellow-crusta uppercase">{{ g.CONF.WWW_EFFECT_HEADER }}</span>
+                        <span class="caption-helper"></span>
+                    </div>
+                    <div class="actions">
+                        <a id="downloadEffectPlot" href="#" class="btn btn-blue btn-circle">
+                            <i class="glyphicon glyphicon-download-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="portlet-body">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div id="plotEffect"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END EFFECT PLOT //-->
+            {% else %}
+            <!-- RENDER FACT VIEWER //-->
+            <div class="portlet">
+                <div class="portlet-title">
+                    <div class="caption">
+                        <i class="fa fa-cogs"></i>
+                        <span class="caption-subject bold font-yellow-crusta uppercase">{{ g.CONF.WWW_FACT_HEADER }}</span>
+                        <span id="_information" class="caption-helper"></span>
+                    </div>
+                    <div class="actions">
+                        <a id="downloadFactPlot" href="#" class="btn btn-blue btn-circle">
+                            <i class="glyphicon glyphicon-download-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="portlet-body">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div id="fact-svg-panel">
+                                <svg id="fact-svg-chart" width="100%" height="500px"></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <strong>{{ g.CONF.WWW_FACT_FACT_ORDER_HEADER }}</strong>
+                        </div>
+                    </div>
+                    <div class="row" style="padding-bottom: 10px">
+                        <div class="col-sm-12">
+                            <span class="text-muted"><small><em>{{ g.CONF.WWW_FACT_FACT_ORDER_TEXT }}</em></small></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-10">
+                            <div id="factor-view-select-wrapper">
+                                <select id="factor-view-select" multiple="multiple">
+                                    {% for k,v in factors.iteritems() %}
+                                    <option value="{{ k }}" selected order="{{ loop.index }}">{{ v['name'] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <button id="btnFactPlot" type="button" class="btn btn-primary">{{ g.CONF.WWW_FACT_BUTTON_PLOT_TEXT }}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- END RENDER FACT VIEWER //-->
+            {% endif %}
+        </div>
+    </div>
+<!-- /.container -->
+{% endblock %}
+
+{% block extrahtml %}
+
+
+{% endblock %}
+
+
+{% block javascript %}
+<script src="{{request.URL_BASE}}/static/bootstrap-slider/bootstrap-slider.min.js"></script>
+<script src="{{request.URL_BASE}}/static/jquery.tablesorter/js/jquery.tablesorter.min.js"></script>
+<script src="{{request.URL_BASE}}/static/jquery.tablesorter/js/jquery.tablesorter.widgets.js"></script>
+<script src="{{request.URL_BASE}}/static/jquery.tablesorter/addons/pager/jquery.tablesorter.pager.min.js"></script>
+<script src="{{request.URL_BASE}}/static/js/d3.v3.js"></script>
+<script src="{{request.URL_BASE}}/static/js/js.cookie.js"></script>
+<script src="{{request.URL_BASE}}/static/js/factexpviewer.js"></script>
+<script src="{{request.URL_BASE}}/static/bootstrap-multiselect/js/bootstrap-multiselect.js"></script>
+<script src="{{request.URL_BASE}}/static/bootstrap-select/js/bootstrap-select.min.js"></script>
+<script src="{{request.URL_BASE}}/static/js/Sortable.js"></script>
+<script src="{{request.URL_BASE}}/static/jquery-fa-loading/jquery.faloading-0.2.min.js"></script>
+<script src="{{request.URL_BASE}}/static/js/saveSvgAsPng.js"></script>
+
+<script>
+///////////////////////////////////////////////////////////////////////////////
+var _settings = {
+    chromosomeDataFile: '/api/chromosomes',
+
+    MATRIX: {feature_id: 'feature_id',
+             feature_group_id: 'feature_group_id',
+             feature_chrom: 'feature_chrom',
+             feature_location: 'feature_location',
+             feature_name: 'feature_name',
+             feature_description: 'feature_description',
+
+             marker_id: 'marker_id',
+             marker_chrom: 'marker_chrom',
+             marker_location: 'marker_location',
+             marker_name: 'marker_name',
+             marker_description: 'marker_description',
+
+             lod_score: 'lod_score',
+             p_value: 'p_value'
+    }
+};
+
+var chromosomes = {};
+var chromosomePosStart = [];
+var chromosomePosMid = [];
+
+//var orderedDaorderedDataset = {};
+
+var _PLOTS = {};
+_PLOTS.matrix = {};
+_PLOTS.lod = {};
+_PLOTS.effect = {};
+_PLOTS.fact = {};
+
+var _G = {};
+_G.lod = {{ lod_threshold }};
+_G.dataset = '{{ dataset }}';
+_G.currentFeature = null;
+_G.currentMarker = null;
+_G.bootstrapEnv = null;
+_G.twoPi = 2 * Math.PI;
+_G.matrixLod = {{ g.CONF.WWW_MATRIX_LOD|lower }};
+
+_G.pvalueToLod = {};
+{%- for d in pvalueToLodTable -%}
+_G.pvalueToLod['{{ d }}'] = {{ pvalueToLodTable[d]|tojson }};
+{% endfor %}
+
+
+/**
+ *  Utility method to get text dimensions.
+**/
+function measureText(svgContainer, text, classname) {
+    if (!text || text.length === 0) return { height: 0, width: 0 };
+    var container = svgContainer.append('g').attr('id', '_measure');
+    container.append('text').attr({ x: -1000, y: -1000, class: classname}).text(text);
+    var bbox = container.node().getBBox();
+    container.remove();
+    return { height: bbox.height, width: bbox.width};
+}
+
+function cookiesEnabled() {
+    var isValid = Cookies.set('checkme', 'valid', {expires: 1}) && Cookies.get('checkme') === 'valid';
+    Cookies.remove('checkme');
+    return isValid;
+}
+
+
+/**
+ *  Using jQuery .ajax method due to it's ability to do synchronous calls instead of
+ *  asynchronous, we need to make sure the chromosome data is loaded before we move on.
+**/
+function loadChromosomeData(dataFile) {
+    var ok = false;
+    chromosomes.totalLength = 0;
+    chromosomes.names = [];
+
+    $.ajax({
+        url: dataFile,
+        type: 'GET',
+        cache: true,
+        dataType: 'json',
+        async: false, // don't go on if we can't load chromosome data
+        beforeSend: function() { updateStatus('Attempting to download: ' + dataFile); },
+        complete: function(){ updateStatus('Succesful download!'); },
+        success: function (jsonData) {
+            updateStatus('Successfully downloaded ' + dataFile);
+            chromosomes.data = jsonData.chromosomes;
+            $.each(jsonData.chromosomes, function(index, element, array) {
+                chromosomePosStart.push(chromosomes.totalLength);
+                chromosomes.names.push(element.name);
+                chromosomes.data[index].totalStart = chromosomes.totalLength;
+                chromosomes.totalLength += element.length;
+             });
+             chromosomePosStart.push(chromosomes.totalLength);
+             ok = true;
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.error("Chromosome download error :" + XMLHttpRequest.responseText);
+            console.error(errorThrown);
+        }
+    });
+
+    chromosomePosStart.forEach(function (t, idx) {
+        if (idx < chromosomePosStart.length - 1) {
+            chromosomePosMid.push((t + chromosomePosStart[idx + 1]) / 2);
+        }
+    });
+
+    return ok;
+}
+
+function formatMbp(Mbp) {
+    return Number(Mbp).toFixed(2);
+}
+
+function bpToChrMBP(bp) {
+    var chr = null;
+    var pos = NaN;
+    $.each(chromosomes.data, function(index, element, array) {
+        if (element.totalStart <= bp) {
+            chr = element.name;
+            pos = bp - element.totalStart;
+            return;
+        }
+    });
+    return {'chr':chr, 'bp':pos};
+}
+
+function chrMBPToTotalBP (chr, Mbp) {
+  return chromosomes.data[chr].totalStart + Math.round(Mbp * 1000000);
+}
+
+{% if render_effect_plot %}
+
+function downloadEffectData(gene) {
+    _PLOTS.effect.data = null;
+    d3.tsv("{{request.URL_BASE}}/api/effect/" + _G.dataset + "/" + gene, function (error, data) {
+        if (error == null) {
+            _PLOTS.effect.data = data;
+            //console.log(_PLOTS.lod.maxLod);
+            _G.currentChrom = _PLOTS.lod.maxLod['chrom'];
+            drawEffect(true);
+
+        } else {
+            _PLOTS.effect.data = null;
+        }
+    }).row(function(d) {
+        // convert to numeric
+        {%- for strain in strains %}
+        d["{{ strain['strain_id'] }}"] = +d["{{ strain['strain_id']}}"];
+        {%- endfor %}
+        return d;
+    });
+
+}
+
+{% else %}
+
+function downloadFactData(gene, factors, marker) {
+    if (gene == null) {
+        return;
+    }
+
+    var json_url = '{{request.URL_BASE}}/api/factexp/' + _G.dataset + "/" + gene + "/" + _G.currentMarker + "/" + factors.toString();
+
+    //if (typeof factors !== 'undefined') {
+    //    json_url += ('&factors=' + factors.toString())
+    //}
+
+
+    $.ajax({
+        url: json_url,
+        type: 'GET',
+        //cache: true,
+        dataType: 'json',
+        //async: false, // don't go on if we can't load chromosome data
+        beforeSend: function() {
+            console.log('Attempting to download: ' + json_url);
+        },
+        complete: function() {
+            console.log('Succesful download!');
+        },
+        success: function (jsonData) {
+            console.log('Successfully downloaded ' + json_url);
+
+            plotFactExpViewData(jsonData);
+
+
+
+
+
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.error("Factorial download error :" + XMLHttpRequest.responseText);
+            console.error(errorThrown);
+        }
+    });
+
+}
+
+
+function getFactorOrder() {
+      var selected = [];
+        $('#factor-view-select option:selected').each(function() {
+            selected.push([$(this).val(), $(this).attr('order')]);
+        });
+
+        selected.sort(function(a, b) {
+            return a[1] - b[1];
+        });
+
+        var ordered = [];
+        for (var i = 0; i < selected.length; i++) {
+            ordered.push(selected[i][0]);
+        }
+
+    console.log('ordered=',ordered);
+
+    return ordered;
+
+}
+
+function plotFactExpViewData(jsonData) {
+    console.log(jsonData);
+    var plotParams = {
+        title: _G.currentMarker,
+        sampleCount: jsonData.samples.length,
+        xAxis: {
+            jitterPx: 25,
+            min: null,
+            max: null,
+            variables: jsonData.xvar,
+            tickLabelRotationDeg: -45
+        },
+        yAxis: {
+            min: null,
+            max: null,
+            variables: jsonData.yvar,
+            whiskers: {
+                units: "stderr",
+                dist: 1
+            }
+        }
+    };
+
+    _PLOTS.fact.samples = jsonData.samples;
+
+    _PLOTS.fact.jsobject = new FactExpPlot({'svg':d3.select("#fact-svg-chart")});
+
+    // not using mouseOverPoint because it wasn't showing tooltip on initial hover
+    /*
+    _PLOTS.fact.jsobject.mouseOverPoint = function(a, b) {
+        $("#data-point-"+a).popover({
+            placement: 'auto',
+            html: true,
+            trigger: 'hover',
+            container: 'body',
+            content: function () {
+                return _PLOTS.fact.samples[a];
+            }
+        });
+    }
+    */
+
+    _PLOTS.fact.jsobject.renderPlot(plotParams);
+
+    $("#points-group use").each(function () {
+        var that = $(this);
+        var sample_index = parseInt($(this).attr('sample-index'));
+        $(this).popover({
+            placement: 'left',
+            html: true,
+            trigger: 'hover',
+            container: 'body',
+            content: function () {
+                return _PLOTS.fact.samples[sample_index];
+            }
+        });
+    });
+}
+
+
+
+{% endif %}
+
+
+function highlightGene(gene) {
+    var found = _PLOTS.matrix.svg.select('#circ_' + gene);
+    found.classed("highlight", !found.classed("highlight"));
+
+    _PLOTS.matrix.svg.append("circle")
+        .attr("cx", found.attr('cx'))
+        .attr("cy", found.attr('cy'))
+        .attr("r", 10)
+        .style("stroke", 'red')
+        .style("stroke-opacity", 1)
+        .style("fill", "none")
+        .transition()
+        .duration(750)
+        .ease(Math.sqrt)
+        .attr("r", 1e-6)
+        .style("stroke-opacity", 1e-6)
+        .remove();
+
+}
+
+
+function showFoundGenes() {
+    if (_PLOTS.matrix.found.length != 0) {
+        if ($('#checkboxShow').is(':checked')) {
+            // hide all
+            _PLOTS.matrix.chartBody.selectAll("circle").attr('r', 0);
+
+            // show found
+            for (e in _PLOTS.matrix.found) {
+                var gene = _PLOTS.matrix.found[e];
+                var found = _PLOTS.matrix.svg.select('#circ_' + gene);
+                found.attr('r', 2);
+            }
+
+        } else {
+            // show all
+            _PLOTS.matrix.chartBody.selectAll("circle").attr('r', 2);
+        }
+    }
+}
+
+function highlightFoundGenes() {
+    if (_PLOTS.matrix.found.length != 0) {
+        for (e in _PLOTS.matrix.found) {
+            var gene = _PLOTS.matrix.found[e];
+            var found = _PLOTS.matrix.svg.select('#circ_' + gene);
+            found.classed("highlight", $('#checkboxHighlight').is(':checked'));
+            _PLOTS.matrix.svg.append("circle")
+                .attr("cx", found.attr('cx'))
+                .attr("cy", found.attr('cy'))
+                .attr("r", 10)
+                .style("stroke", 'red')
+                .style("stroke-opacity", 1)
+                .style("fill", "none")
+                .transition()
+                .duration(750)
+                .ease(Math.sqrt)
+                .attr("r", 1e-6)
+                .style("stroke-opacity", 1e-6)
+                .remove();
+        }
+    }
+}
+
+function zoomToGene(gene) {
+    var found = _PLOTS.matrix.svg.select('#circ_' + gene);
+    var cx = found.attr('cx');
+    var cy = found.attr('cy');
+    var scaleFactor = 10;
+    _PLOTS.matrix.zoom.scale(scaleFactor);
+    cx = (cx * -scaleFactor) + _PLOTS.matrix.width/2;
+    cy = (cy * -scaleFactor) + _PLOTS.matrix.height/2;
+
+    _PLOTS.matrix.zoom.translate([cx, cy]);
+    zoomed();
+}
+
+
+function findGene() {
+    findGene(false);
+}
+
+function findGene(do_plot) {
+    $("#btnGo").button('loading');
+    var searchTerm = $('#searchTerm').val().trim().toUpperCase();
+    $('#searchResultsStatus').html("");
+    $('#searchResults').html("");
+
+    if (searchTerm.length == 0) {
+        $('#searchTerm').focus();
+        $("#btnGo").button('reset');
+        return;
+    }
+
+    _PLOTS.matrix.filteredData = [];
+    _PLOTS.matrix.found = [];
+    searchResults = {};
+
+    var url = "{{request.URL_BASE}}/api/search?exact=False&species=Mm&term=" + searchTerm;
+    console.log(url);
+    var jqxhr = $.getJSON(url)
+            .done(function( data, textStatus, jqXHR ) {
+               console.log('data=',data);
+               if (data.error) {
+                   console.log(error);
+                   $('#searchResultsStatus').html("<br><span class='text-danger'>Error searching.</span>");
+               }
+
+               if (data.result.matches.length <= 0) {
+                   $('#searchResultsStatus').html("<br><span class='text-danger'>No results found.</span>");
+               } else {
+                   if (data.result.matches.length == 1) {
+                       $('#searchResultsStatus').html("<p class='text-right text-muted'><em><small>" + data.result.matches.length.toLocaleString() + " result</small></em></p>");
+                   } else {
+                       $('#searchResultsStatus').html("<p class='text-right text-muted'><em><small>" + data.result.matches.length.toLocaleString() + " results</small></em></p>");
+                   }
+
+                    var tbl = '<table id="searchTable" class="table-condensed">';
+                    tbl += '<thead><tr><th>Ensembl ID</th><th>Symbol</th><th>LOD</th><th>Location</th></tr></thead>';
+                    tbl += '<tbody>';
+
+                    for (d in data.result.matches) {
+
+                        var match = data.result.matches[d];
+                        console.log('match=', match);
+
+                        var row = '<tr>';
+                        searchResults[match.ensembl_id] = match;
+
+
+                        //console.log('delem[_settings.MATRIX.feature_id]=', delem[_settings.MATRIX.feature_id]);
+
+                        if (match.ensembl_id in _PLOTS.matrix.ids) {
+                            // we know a point exists, find it
+                            console.log('element exists');
+                            var delem = _PLOTS.matrix.ids[match.ensembl_id];
+                            console.log('delem=',delem);
+                            row += '<td><a href="#" id="plotMe" feature_id="' + delem[_settings.MATRIX.feature_id] + '">' + delem[_settings.MATRIX.feature_id] + '</a> <span id="matchInfo" feature_id="' + delem[_settings.MATRIX.feature_id] + '" class="glyphicon glyphicon-info-sign"></span></td>';
+                            row += ('<td>' + delem[_settings.MATRIX.feature_name] + '</td>');
+                            row += ('<td>' + Number(delem[_settings.MATRIX.lod_score]).toFixed(4) + '</td>');
+                            //row += ('<td>' + delem[_settings.MATRIX.feature_chrom] + ":" + formatMbp(delem[_settings.MATRIX.feature_location]) + '</td></tr>');
+                            row += ('<td>' + match.chromosome + ":" + formatMbp(match.position_start/1000000) + "-" + formatMbp(match.position_end/1000000) + '</td>');
+
+                            _PLOTS.matrix.found.push(delem.feature_id);
+                            _PLOTS.matrix.filteredData.push(delem);
+                        } else {
+                                console.log('element does not exist');
+                                row += '<td>' + match.ensembl_id + ' <span id="matchInfo" feature_id="' + match.ensembl_id + '" class="glyphicon glyphicon-info-sign"></span></td>';
+                                row += ('<td>' + match.symbol + '</td>');
+                                row += ('<td></td>');
+                                row += ('<td>' + match.chromosome + ":" + formatMbp(match.position_start/1000000) + "-" + formatMbp(match.position_end/1000000) + '</td>');
+                                row += ('</tr>');
+                        }
+                        row += '</tr>';
+                        tbl += row;
+
+
+
+                        if(_PLOTS.matrix.found.length >= 100) {
+                            break;
+                        }
+                    }
+
+                    tbl += "</tbody>";
+                    tbl += "</table>";
+                    $('#searchResults').html(tbl);
+
+                    $("#searchTable").tablesorter({
+                        theme: "bootstrap",
+                        widthFixed: true,
+                        headerTemplate: '{content} {icon}', // new in v2.7. Needed to add the bootstrap icon!
+                        widgets: ["uitheme", "zebra"],
+                        widgetOptions: {
+                            zebra: ["even", "odd"]
+                        }
+                    });
+
+                    $("#searchTable a").click(function (e) {
+                        e.preventDefault();
+                        console.log("Search Table click, this=", $(this))
+                        console.log("Search Table click, e=", e)
+                        var feature_info = _PLOTS.matrix.ids[$(this).attr('feature_id')];
+                        formatFeatureInformation(feature_info);
+                        downloadLodData(feature_info[_settings.MATRIX.feature_id]);
+                        return false;
+                    });
+
+
+                    to = setTimeout(function () {
+                        $("[id='matchInfo']").each(function () {
+                            var that = $(this);
+
+                            $(this).popover({
+                                placement: 'left',
+                                html: true,
+                                trigger: 'hover',
+                                container: 'body',
+                                template:'<div class="popover container my-custom-class" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>',
+                                content: function () {
+                                    console.log(that);
+                                    console.log(that[0].getAttribute("feature_id"));
+                                    var d = searchResults[that[0].getAttribute("feature_id")];
+                                    console.log(d);
+                                    var h = '<table class="table table-condensed">';
+                                    h += '<tr><td><strong>Symbol</strong> </td><td>' + d['symbol'] + '</td></tr>';
+                                    h += '<tr><td><strong>Location</strong> </td><td>' + d['chromosome'] + ':' + d['position_start'] + '-' + d['position_end'] + '</td></tr>';
+                                    h += '<tr><td><strong>Name</strong> </td><td>' + d['name'] + '</td></tr>';
+                                    h += '<tr><td><strong>Synonyms</strong> </td><td>';
+
+                                    var s = d['synonyms'];
+                                    if (s) {
+                                        if (s.length > 5) {
+                                            var s2 = s.slice(1, 6);
+                                            h += s2.join("<br>");
+                                            h += "<br><i>(" + (s.length - s2.length) + " more synonyms)</i>";
+                                        } else {
+                                            h += s.join("<br>");
+                                        }
+                                    }
+                                    h += '</td></tr>';
+                                    h += '<tr><td><strong>Match Reason</strong> </td><td>' + d['match_reason'] + '</td></tr>';
+                                    h += '<tr><td><strong>Match Value</strong> </td><td>' + d['match_value'] + '</td></tr>';
+                                    h += '</table>';
+
+                                    return h;
+                                }
+                            });
+                        });
+                    });
+               }
+
+               // added for search_term to be passed in from url ?search_term=<something>
+               if (do_plot) {
+                   if (Object.keys(searchResults).length == 1) {
+                       if (_PLOTS.matrix.filteredData.length == 1) {
+                           var d = _PLOTS.matrix.filteredData[0];
+                           var found = _PLOTS.matrix.svg.select('#circ_' + d.ensembl_id)[0][0];
+                           if (found) {
+                               var feature_info = _PLOTS.matrix.ids[d.ensembl_id];
+                               formatFeatureInformation(feature_info);
+                               downloadLodData(feature_info[_settings.MATRIX.feature_id]);
+                           } else {
+                               console.log('NOT FOUND');
+                           }
+                       }
+
+                   }
+               }
+
+
+            }).fail(function( jqXHR, textStatus, errorThrown ) {
+                // fail is for network error or similar
+                console.log('fail');
+            }).always(function( data, textStatus, jqXHR ) {
+                //jqXHR.always(function( data|jqXHR, textStatus, jqXHR|errorThrown ) { });
+                // the always function 1st and 3rd params flip flop based upon there
+                // was a successful ajax call or not
+                console.log('always');
+                $("#btnGo").button('reset');
+            });
+}
+
+function tabulate(data, columns) {
+    var table = d3.select("#dataMatrix")
+                    .append("table")
+                    .attr("class", "table-condensed tablesorter tablesorter-bootstrap table table-bordered")
+                    .attr("id", "tblMatrix");
+    var thead = table.append("thead");
+    var tbody = table.append("tbody");
+
+    // append the header row
+    thead.append("tr")
+            .selectAll("th")
+            .data(columns)
+            .enter()
+            .append("th")
+            .text(function (column) {
+                if (column === _settings.MATRIX.lod_score) {
+                    return 'LOD';
+                } else if (column === _settings.MATRIX.feature_name) {
+                    return 'Symbol'
+                } else if (column === _settings.MATRIX.feature_id) {
+                    return 'ID'
+                } else if (column === _settings.MATRIX.feature_location) {
+                    return 'Location'
+                } else {
+                    return column;
+                }
+            });
+
+    // TODO: allow the 1000 cutoff to be a variable.  This was added to speed html table rendering.
+    var mdata = null;
+    if (data.length >= 1000) {
+        mdata = data.slice(0, 1000);
+    } else {
+        mdata = data;
+    }
+
+    // create a row for each object in the data
+    var rows = tbody.selectAll("tr")
+            .data(mdata.sort(function(a,b) {
+                return +b[_settings.MATRIX.lod_score] - +a[_settings.MATRIX.lod_score];
+            }))
+            .enter().append("tr");
+
+        // create a cell in each row for each column
+        var cells = rows.selectAll("td")
+                .data(function (row) {
+                    //console.log('row=',row);
+                    return columns.map(function (column) {
+                        if (column === _settings.MATRIX.lod_scorwe) {
+                            return {column: column, value: Number(row[column]).toFixed(2)};
+                        } else if (column === _settings.MATRIX.feature_id) {
+                            //return {column: column, value: Number(row[column]).toFixed(2)};
+                            var atag = '<a href="#" id="plotMe" feature_id="' + row[column] + '">' + row[column] + '</a></td>';
+                            return {column: column, value: atag};
+                        } else if (column === _settings.MATRIX.feature_location) {
+                            return {column: column, value: row[_settings.MATRIX.feature_chrom] + ":" + formatMbp(row[column])};
+                        } else {
+                            return {column: column, value: row[column]};
+                        }
+                    });
+                })
+                .enter()
+                .append("td")
+                //.attr("style", "font-family: Courier") // sets the font style
+                .html(function (d) {
+                    return d.value;
+                });
+
+
+
+
+        return table;
+    }
+
+function buildDataListTable(data, threshold) {
+    d3.select("#tblMatrix").remove();
+
+    // render the table
+    var mTable = tabulate(data, [_settings.MATRIX.feature_id, _settings.MATRIX.feature_name, _settings.MATRIX.lod_score, _settings.MATRIX.feature_location]);
+
+    $("#tblMatrix").tablesorter({
+        theme: "bootstrap",
+        widthFixed: true,
+        headerTemplate: '{content} {icon}', // new in v2.7. Needed to add the bootstrap icon!
+        widgets: ["uitheme", "zebra"],
+        widgetOptions: {
+            zebra: ["even", "odd"]
+        }
+    });
+
+    $("#tblMatrix a").click(function (e) {
+        e.preventDefault();
+        console.log("Matrix Table click, this=", $(this))
+        console.log("Matrix Table click, e=", e)
+        var feature_info = _PLOTS.matrix.ids[$(this).attr('feature_id')];
+        formatFeatureInformation(feature_info);
+        downloadLodData(feature_info[_settings.MATRIX.feature_id]);
+        return false;
+    });
+}
+
+
+var formatPercent = d3.format(".0%");
+
+function loadMatrixData(callback) {
+    _PLOTS.matrix.data = [];
+    _PLOTS.matrix.chartBody.selectAll("circle").remove();
+    _PLOTS.matrix.svg.loading.meter.transition().attr("transform", "scale(1)");
+    _PLOTS.matrix.has_pvalues = false;
+
+    var url = '{{request.URL_BASE}}/api/matrix/' + _G.dataset;
+
+    d3.tsv(url)
+        .on("progress", function() {
+            console.log('{{request.URL_BASE}}/api/matrix/' + _G.dataset, formatPercent(d3.event.loaded/d3.event.total));
+
+            if (d3.event.loaded/d3.event.total> .9) {
+                console.log('Downloaded')
+                _PLOTS.matrix.svg.loading.text.text("Plotting...");
+            } else {
+                _PLOTS.matrix.svg.loading.text.text(formatPercent(d3.event.loaded/d3.event.total));
+            }
+
+            _PLOTS.matrix.svg.loading.foreground.attr("d", _PLOTS.matrix.svg.loading.arc.endAngle(_G.twoPi * d3.event.loaded/d3.event.total));
+        })
+        .row(function(d) {
+            // convert to numeric
+            d.feature_location = +d.feature_location;
+            d.marker_location = +d.marker_location;
+            d.lod_score = +d.lod_score;
+            if (d.p_value) {
+                d.p_value = +d.p_value;
+                _PLOTS.matrix.has_pvalues = true;
+            }
+
+            _PLOTS.matrix.data.push(d);
+            return d;
+        })
+        .on("load", function(error, data) {
+            console.log(url, "on('load')");
+
+            _PLOTS.matrix.svg.loading.text.text("Plotting...");
+
+            /*
+            if (error) {
+                updateStatus('');
+                _PLOTS.matrix.svg.loading.meter.transition().delay(250).attr("transform", "scale(0)");
+                return;
+            }
+            */
+
+            setTimeout(function() {
+                _PLOTS.matrix.data = _PLOTS.matrix.data.filter(function (e) {
+                    if ($.inArray(e[_settings.MATRIX.feature_chrom], chromosomes.names) > -1) {
+                        return true;
+                    }
+                    return false;
+                });
+
+
+
+                drawMatrix(false);
+
+                if (callback != null) {
+                    callback();
+                }
+
+                    console.log('finished');
+
+            }, 10);
+
+            //_PLOTS.matrix.svg.loading.meter.transition().delay(2500).attr("transform", "scale(0)");
+        }).get();
+ }
+
+
+function initMatrix() {
+    var graphic = $('#plotMatrix');
+    graphic.empty();
+    console.log('empty');
+
+    //var graphic_aspect_width = 16;
+    //var graphic_aspect_height = 9;
+    var plot = _PLOTS.matrix;
+    plot.id = "plotMatrix";
+    var graphic_aspect_width = 1;
+    var graphic_aspect_height = 1;
+    plot.mobile_threshold = 455;
+    var margin = { top: 20, right: 15, bottom: 35, left: 45 };
+
+    plot.width = graphic.width() - margin.left - margin.right;
+    plot.height = Math.ceil((plot.width * graphic_aspect_height) / graphic_aspect_width) - margin.top - margin.bottom;
+
+    if ((plot.width <= 0) || (plot.height <= 0)) {
+        console.warn("Error in drawing plot");
+        console.warn(plot);
+        return;
+    }
+
+    var $lod_threshold_div = $("#lod_threshold_div");
+
+    console.log("Adding ", $lod_threshold_div.outerHeight(), "to", plot.height);
+
+    d3.select("#dataMatrix").style("height", plot.height+"px");
+    d3.select("#searchResults").style("height", ($lod_threshold_div.outerHeight() + plot.height)+"px");
+    d3.select("#feature_history_div").style("height", ($lod_threshold_div.outerHeight() + plot.height)+"px");
+
+    console.log("plot.height=", plot.height);
+
+    plot.x = d3.scale.linear().rangeRound([0, plot.width]).domain([0, chromosomes.totalLength]);
+    plot.y = d3.scale.linear().rangeRound([0, plot.height]).domain([chromosomes.totalLength, 0]);
+
+    plot.svg = d3.select('#plotMatrix')
+        .append("svg")
+        .attr('id', 'plotMatrixSVG')
+        .attr('width', plot.width + margin.left + margin.right)
+        .attr('height', plot.height + margin.top + margin.bottom);
+
+
+       //$("#plotMatrixSVG").append("<style>@import url({{request.URL_BASE}}/static/css/plot_matrix.css);</style>");
+
+
+
+        plot.svg = plot.svg.append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    plot.svg.append("rect")
+        .attr("width", plot.width)
+        .attr("height", plot.height)
+        .attr("class", "plot");
+
+    plot.make_x_axis = function () {
+        return d3.svg.axis()
+            .scale(plot.x)
+            .orient("bottom")
+            .tickValues(chromosomePosStart);
+    };
+
+    plot.make_y_axis = function () {
+        return d3.svg.axis()
+            .scale(plot.y)
+            .orient("left")
+            .tickValues(chromosomePosStart);
+    };
+
+    plot.xAxis = d3.svg.axis()
+        .scale(plot.x)
+        .orient("bottom")
+        .tickValues(chromosomePosMid)
+        .tickFormat(function(d) { return bpToChrMBP(d).chr; });
+
+    var xTitleDim = measureText(plot.svg, "{{ g.CONF.WWW_MATRIX_X_AXIS_TEXT }}", "x-axis-title");
+    var yTitleDim = measureText(plot.svg, "{{ g.CONF.WWW_MATRIX_Y_AXIS_TEXT }}", "y-axis-title");
+
+    plot.svg.append("text")
+        .attr("y", 0 - margin.top - (yTitleDim.height/2))
+        .attr("x", -(plot.height/2) - (yTitleDim.width/2))
+        .attr("transform", "rotate(-90)")
+        .text("{{ g.CONF.WWW_MATRIX_Y_AXIS_TEXT }}")
+        .attr("class", "y-axis-title");
+
+    plot.svg.append("text")
+        .attr("y", plot.height + margin.bottom)
+        .attr("x", (plot.width/2) - (xTitleDim.width/2))
+        .text("{{ g.CONF.WWW_MATRIX_X_AXIS_TEXT }}")
+        .attr("class", "x-axis-title");
+
+    var clipX = plot.svg.append("clipPath")
+          .attr('id', 'clip-x-axis')
+          .append('rect')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('width', plot.width)
+          .attr('height', margin.bottom);
+
+    plot.svg.append("g")
+        .attr("class", "x-axis")
+        .attr('clip-path', 'url(#clip-x-axis)')
+        .attr("transform", "translate(0, " + plot.height + ")")
+        .call(plot.xAxis);
+
+    plot.yAxis = d3.svg.axis()
+        .scale(plot.y)
+        .orient("left")
+        .tickValues(chromosomePosMid)
+        .tickFormat(function(d) { return bpToChrMBP(d).chr; });
+
+    var clipY = plot.svg.append("clipPath")
+          .attr('id', 'clip-y-axis')
+          .append('rect')
+          .attr('x', - margin.left)
+          .attr('y', 0)
+          .attr('height', plot.height)
+          .attr('width', margin.left);
+
+    plot.svg.append("g")
+        .attr("class", "y-axis")
+        .attr('clip-path', 'url(#clip-y-axis)')
+        .call(plot.yAxis);
+
+    var clip = plot.svg.append("clipPath")
+        .attr("id", "clip")
+        .append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", plot.width)
+        .attr("height", plot.height);
+
+    plot.chartBody = plot.svg.append("g")
+        .attr("clip-path", "url(#clip)");
+
+    plot.chartBody.append("g")
+        .attr("class", "x-grid")
+        .attr("transform", "translate(0," + plot.height + ")")
+        .call(plot.make_x_axis()
+        .tickSize(-plot.height, 0, 0)
+        .tickValues(chromosomePosStart)
+        .tickFormat(""));
+
+    plot.chartBody.append("g")
+        .attr("class", "y-grid")
+        .call(plot.make_y_axis()
+        .tickSize(-plot.width, 0, 0)
+        .tickValues(chromosomePosStart)
+        .tickFormat(""));
+
+    // loading SVG elements
+
+    plot.svg.loading = {};
+    plot.svg.loading.g = plot.svg.append("g")
+            .attr("transform", "translate(" + (plot.width)/ 2 + "," +
+                                              (plot.height)/ 2 + ")");
+
+    plot.svg.loading.arc = d3.svg.arc()
+        .startAngle(0)
+        .innerRadius(100)
+        .outerRadius(160);
+
+    plot.svg.loading.meter = plot.svg.loading.g.append("g")
+            .attr("class", "progress-meter");
+
+    plot.svg.loading.background = plot.svg.loading.meter.append("path")
+            .attr("class", "background")
+            .attr("d", plot.svg.loading.arc.endAngle(_G.twoPi));
+
+    plot.svg.loading.foreground = plot.svg.loading.meter.append("path")
+            .attr("class", "foreground");
+
+    plot.svg.loading.text = plot.svg.loading.meter.append("text")
+            .attr("text-anchor", "middle")
+            .attr("dy", ".35em");
+}
+
+
+function drawMatrix(initialize) {
+
+    if (initialize) {
+        initMatrix();
+    }
+
+    var plot = _PLOTS.matrix;
+
+    //remove all the circles
+    plot.chartBody.selectAll("circle").remove();
+    plot.ids = {};
+
+    _G.threshold_value = _G.lod;
+    if (_G.matrixLod) {
+        console.log("using lod, threshold =", _G.lod);
+    } else {
+        console.log("using p-value, threshold =", _G.lod);
+        console.log('lodA=', _G.pvalueToLod[_G.dataset]['dfA'][_G.lod]);
+        console.log('lodX=', _G.pvalueToLod[_G.dataset]['dfX'][_G.lod]);
+    }
+
+    plot.data_displayed = plot.data.filter(function(d) {
+        if (d[_settings.MATRIX.feature_id] === '') {
+            // don't use data without an id
+            return false;
+        }
+
+        plot.ids[d[_settings.MATRIX.feature_id]] = d;
+
+        if (_G.matrixLod) {
+            return d[_settings.MATRIX.lod_score] > _G.lod;
+        } else {
+            if (d[_settings.MATRIX.feature_chrom] === 'X') {
+                return d[_settings.MATRIX.lod_score] > _G.pvalueToLod[_G.dataset][['dfX']][_G.lod];
+            } else {
+                return d[_settings.MATRIX.lod_score] > _G.pvalueToLod[_G.dataset]['dfA'][_G.lod];
+            }
+
+        }
+    });
+
+    console.log('plot.data.length=',plot.data.length);
+    console.log('plot.data_displayed.length=',plot.data_displayed.length);
+
+
+
+
+
+
+    plot.chartBodyCircles = plot.chartBody.selectAll("circle")
+        .data(plot.data_displayed)
+        .enter()
+        .append("circle")
+        .attr('id', function (d) {
+            return 'circ_' + d[_settings.MATRIX.feature_id];
+        })
+        .attr("class", "dot")
+        .attr("cx", function (d) {
+            return plot.x(chrMBPToTotalBP(d[_settings.MATRIX.marker_chrom], d[_settings.MATRIX.marker_location]));
+        })
+        .attr("cy", function (d) {
+            return plot.y(chrMBPToTotalBP(d[_settings.MATRIX.feature_chrom], d[_settings.MATRIX.feature_location]));
+        })
+        .attr("r", function(d) {
+            if (plot.width < plot.mobile_threshold) {
+                return 1;
+            }
+            return 2;
+        })
+        .style("opacity", function (d) {
+            var s = d[_settings.MATRIX.lod_score];
+            if (s > 20) { return 1; }
+            else { return s * 5 / 100; }
+        })
+        .on("mouseover", function (d) {
+            d3.selectAll('#circ_' + d[_settings.MATRIX.feature_id]).attr("r", 4).style("fill", "red").style("opacity", 1.0);
+        })
+        .on("mouseout", function (d) {
+            d3.selectAll('#circ_' + d[_settings.MATRIX.feature_id])
+                    .attr("r", function(d2) {
+                            if (plot.width < plot.mobile_threshold) {
+                                return 1;
+                            }
+                            return 2;
+                     })
+                    .style("opacity", function (d) {
+                            var s = parseFloat(d[_settings.MATRIX.lod_score]);
+                            if (s > 20) { return 1; }
+                            else { return s * 5 / 100; }
+            }).style("fill", "black");
+        })
+    .on("click", function (d) {
+            console.log("Search Table click, this=", $(this))
+            console.log("Search Table click, d=", d)
+            formatFeatureInformation(d);
+            downloadLodData(d[_settings.MATRIX.feature_id]);
+        });
+
+
+    //console.log($('#' + plot.id + ' circle'));
+    console.log('building datalist matrix');
+    buildDataListTable(plot.data_displayed, _G.lod);
+
+    $('#' + plot.id + ' circle').each(function () {
+        //console.log(this);
+        $(this).popover({
+            placement: 'auto',
+            html: true,
+            trigger: 'hover',
+            container: 'body',
+            template:'<div class="popover container my-custom-class" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>',
+            content: function () {
+                var d = this.__data__;
+                var h = "";
+                h += '<table class="table table-condensed">';
+                h += '<tr><td><strong>Gene Symbol</strong></td><td>' + d[_settings.MATRIX.feature_name] + '</td></tr>'
+                h += '<tr><td><strong>Gene ID</strong></td><td>' + d[_settings.MATRIX.feature_id] + '</td></tr>'
+                h += '<tr><td><strong>LOD Score</strong></td><td>' + Number(d[_settings.MATRIX.lod_score]).toFixed(2) + '</td></tr>'
+                h += '<tr><td><strong>Marker Position</strong></td><td>' + d[_settings.MATRIX.marker_chrom] + ":" + d[_settings.MATRIX.marker_location] + '</td></tr>'
+                h += '<tr><td><strong>Gene Position</strong></td><td>' + d[_settings.MATRIX.feature_chrom] + ":" + d[_settings.MATRIX.feature_location] + '</td></tr>'
+                h += '</table>';
+                return h;
+            }
+        });
+    });
+
+    //applyLODThreshold({{ lod_threshold }});
+
+    plot.svg.loading.meter.transition().attr("transform", "scale(0)");
+    plot.svg.loading.text.text("");
+
+    {% if search_term %}
+    console.log('Finding gene now...');
+    findGene(true);
+    {% endif %}
+
+    var $lod_threshold_div = $("#lod_threshold_div");
+
+    d3.select("#dataMatrix").style("height", $("#plotMatrixSVG").height()+"px");
+    d3.select("#searchResults").style("height", ($lod_threshold_div.outerHeight() + plot.height)+"px");
+    d3.select("#feature_history_div").style("height", ($lod_threshold_div.outerHeight() + plot.height)+"px");
+    $("#portletSearch").height($("#portletMatrix").height());
+}
+
+function formatFeatureInformation(feature_info) {
+    console.log("feature_info=", feature_info);
+    var html = "";
+    html += "<strong>";
+    html += feature_info[_settings.MATRIX.feature_id];
+    html += "</strong>, ";
+    html += feature_info[_settings.MATRIX.feature_name];
+    html += ", located on chromosome ";
+    html += feature_info[_settings.MATRIX.feature_chrom];
+    html += " at ";
+    html += formatMbp(feature_info[_settings.MATRIX.feature_location]);
+    html += " Mb ";
+    html += " <a target='_newwin' href='http://www.ensembl.org/Mus_musculus/Gene/Summary?db=core;g=";
+    html += feature_info[_settings.MATRIX.feature_id];
+    html += "'> Ensembl <i class='fa fa-external-link'></i></a> ";
+    html += " <a target='_newwin' href='http://www.informatics.jax.org/marker/";
+    html += feature_info[_settings.MATRIX.feature_id];
+    html += "'>MGI <i class='fa fa-external-link'></i></a> ";
+    $("#featureInformation").html(html);
+
+}
+
+function updateStatus(txt) {
+    if (txt === '') {
+        $("#status").html('');
+    }
+    else {
+        $("#status").html('Status: ' + txt);
+    }
+
+}
+
+function arraymove(arr, fromIndex, toIndex) {
+    console.log('moving from', fromIndex, 'to', toIndex);
+    var element = arr[fromIndex];
+    arr.splice(fromIndex, 1);
+    arr.splice(toIndex, 0, element);
+}
+
+
+/**
+ * Download the LOD scores
+ */
+
+function downloadLodData(feature) {
+    console.log('Acquiring data for ' + feature);
+
+    // cookies, everywhere cookie
+    var feature_data = Cookies.getJSON("feature_data");
+    var index = -1;
+
+    // build the history of 'clicked' features
+    if (feature_data) {
+        // move to the top if already here
+        for (var i in feature_data) {
+            //console.log('gene_data[i]=',gene_data[i]);
+            if (feature_data[i]['id'] === feature) {
+                index = i;
+                break;
+            }
+        }
+        if (index > 0) {
+            arraymove(feature_data, index, 0);
+        } else if (index == -1) {
+            console.log('_PLOTS.matrix.ids[gene]=',_PLOTS.matrix.ids[feature]);
+            var feature_info = {'id': feature, 'sym': _PLOTS.matrix.ids[feature]['feature_name'],
+                'lod': _PLOTS.matrix.ids[feature]['lod_score'],
+                'location': _PLOTS.matrix.ids[feature][_settings.MATRIX.feature_chrom] + ":" + formatMbp(_PLOTS.matrix.ids[feature][_settings.MATRIX.feature_location])}
+            feature_data.unshift(feature_info);
+
+
+            if (feature_data.length > 25) {
+                feature_data.pop();
+            }
+
+
+        } else {
+            console.log('doing nothing, returning');
+        }
+    } else {
+        var feature_info = {'id': feature, 'sym': _PLOTS.matrix.ids[feature]['feature_name'],
+            'lod': _PLOTS.matrix.ids[feature]['lod_score'],
+            'location': _PLOTS.matrix.ids[feature][_settings.MATRIX.feature_chrom] + ":" + formatMbp(_PLOTS.matrix.ids[feature][_settings.MATRIX.feature_location])};
+        feature_data = [feature_info];
+    }
+
+    // attempt to set the cookie, if there is to much data the cookie won't set, so we need to check and adjust the array size
+    Cookies.set("feature_data", feature_data);
+     _G.currentFeature = feature;
+
+    buildHistory();
+
+    d3.tsv('{{request.URL_BASE}}/api/lod/' + _G.dataset + '/' + feature, function (error, data) {
+        updateStatus(error);
+        if (error == null) {
+            //console.log('LOD data', data);
+            _PLOTS.lod.data = data;
+            drawLOD(false);
+
+            {% if render_effect_plot %}
+            console.log('DOWNLOADING EFFECT DATA');
+            downloadEffectData(feature);
+            {% else %}
+            console.log('DOWNLOADING FACT DATA');
+            downloadFactData(feature, getFactorOrder(), _G.currentMarker);
+            {% endif %}
+
+            updateStatus('');
+        } else {
+            console.log('MAJOR ERROR');
+            console.log(error);
+        }
+    }).row(function(d) {
+        return {chrom: d.chrom, location: +d.location, lod: +d.lod, marker_id: d.marker_id };
+    });
+}
+
+
+function initLOD() {
+    var graphic = $('#plotLOD');
+    graphic.empty();
+    var plot = _PLOTS.lod;
+    plot.id = "plotLOD";
+    var graphic_aspect_width = 3;
+    var graphic_aspect_height = 1;
+    var mobile_threshold = 350;
+
+    if (graphic.width() < 350) {
+        graphic_aspect_height = 2;
+    }
+
+    var margin = { top: 20, right: 15, bottom: 35, left: 45 };
+
+    plot.width = graphic.width() - margin.left - margin.right;
+    plot.height = Math.ceil((plot.width * graphic_aspect_height) / graphic_aspect_width) - margin.top - margin.bottom;
+
+    if ((plot.width <= 0) || (plot.height <= 0)) {
+        console.warn("Error in drawing plot");
+        console.warn(plot);
+        return;
+    }
+
+    plot.svg = d3.select('#plotLOD')
+        .append("svg")
+        .attr('id', 'plotLODSVG')
+        .attr('width', plot.width + margin.left + margin.right)
+        .attr('height', plot.height + margin.top + margin.bottom)
+        .attr("xmlns", "http://www.w3.org/2000/svg");
+
+
+    plot.svg = plot.svg
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+    var yTitleDim = measureText(plot.svg, "{{ g.CONF.WWW_LOD_Y_AXIS_TEXT }}", "y-axis-title");
+    plot.svg.append("text")
+            .attr("y", 0 - margin.top - (yTitleDim.height/2))
+            .attr("x", -(plot.height/2) - (yTitleDim.width/2))
+            .attr("transform", "rotate(-90)")
+            .text("{{ g.CONF.WWW_LOD_Y_AXIS_TEXT }}")
+            .attr("class", "y-axis-title");
+
+    var xTitleDim = measureText(plot.svg, "{{ g.CONF.WWW_LOD_X_AXIS_TEXT }}", "x-axis-title");
+    plot.svg.append("text")
+            .attr("y", plot.height + margin.bottom)
+            .attr("x", (plot.width/2) - (xTitleDim.width/2))
+            .text("{{ g.CONF.WWW_LOD_X_AXIS_TEXT }}")
+            .attr("class", "x-axis-title");
+
+    plot.data_chr = {};
+
+    for (var i = 0; i < chromosomes.names.length; i++) {
+        plot.data_chr[chromosomes.names[i]] = {};
+        plot.data_chr[chromosomes.names[i]].data = [];
+    }
+
+    plot.maxLod = null;
+
+    // input domain is the min and max data values
+    // output range is the min and max pixel values (screen)
+    plot.x = d3.scale.linear().rangeRound([0, plot.width]).domain([0, chromosomes.totalLength]);
+    plot.y = d3.scale.linear().rangeRound([0, plot.height]).domain([0.5, 0]);
+
+
+    plot.groupTop = plot.svg.append('g').attr('id', 'plots.lodGroupTop');
+    plot.groupNondata = plot.groupTop.append('g').attr('id', 'plots.lodGroupNondata');
+    plot.groupData = plot.groupTop.append('g').attr('id', 'plots.lodGroupData');
+    plot.lodLine = null;
+    plot.groupDataChr = {};
+    plot.groupDataCircle = {};
+    /*
+
+    plot.focus = plot.svg.append("g")
+            .attr("class", "lodfocus")
+            .style("display", "none");
+
+    // append the x line
+    plot.focus.append("line")
+        .attr("class", "x")
+        .style("stroke", "blue")
+        .style("stroke-dasharray", "3,3")
+        .style("opacity", 0.5)
+        .attr("y1", 0)
+        .attr("y2", plot.height);
+
+    // append the y line
+    plot.focus.append("line")
+        .attr("class", "y")
+        .style("stroke", "blue")
+        .style("stroke-dasharray", "3,3")
+        .style("opacity", 0.5)
+        .attr("x1", plot.width)
+        .attr("x2", plot.width);
+
+    // append the circle at the intersection
+    plot.focus.append("circle")
+        .attr("class", "y")
+        .style("fill", "none")
+        .style("stroke", "blue")
+        .attr("r", 4);
+
+    // place the value at the intersection
+    plot.focus.append("text")
+        .attr("class", "y1")
+        .style("stroke", "white")
+        .style("stroke-width", "3.5px")
+        .style("opacity", 0.8)
+        .attr("dx", 8)
+        .attr("dy", "-.3em");
+    plot.focus.append("text")
+        .attr("class", "y2")
+        .attr("dx", 8)
+        .attr("dy", "-.3em");
+
+    plot.focusRect = plot.svg.append("g");
+    */
+
+}
+
+
+function drawLOD(initialize) {
+    if (initialize) {
+        console.log("Initializing LOD plot");
+        initLOD();
+    }
+
+    var plot = _PLOTS.lod;
+    var dataset = plot.data;
+
+
+    // plot.data_chr[c] has the markers and their positions (to be plotted on x-axis)
+
+    plot.data_chr = {};
+    plot.data_chr_filtered = {};
+
+    for (var i = 0; i < chromosomes.names.length; i++) {
+        plot.data_chr[chromosomes.names[i]] = {};
+        plot.data_chr[chromosomes.names[i]].data = [];
+    }
+
+    plot.maxLod = dataset[0];
+
+    for (d in dataset) {
+        var elem = dataset[d];
+        if (elem['lod'] > plot.maxLod['lod']) {
+            plot.maxLod = elem;
+        }
+        plot.data_chr[elem['chrom']].data.push(elem);
+    }
+
+    _G.currentMarker = plot.maxLod['marker_id'];
+
+    // input domain is the min and max data values
+    // output range is the min and max pixel values (screen)
+    plot.x = d3.scale.linear().rangeRound([0, plot.width]).domain([0, chromosomes.totalLength]);
+    plot.y = d3.scale.linear().rangeRound([0, plot.height]).domain([parseFloat(plot.maxLod["lod"]) + 0.5, 0]);
+
+    var transitionData = false;
+    var yAxis = d3.svg.axis().scale(plot.y).orient("left").ticks(5).tickSize(-plot.width);
+
+    if (typeof plot.firstTime === 'undefined') {
+        plot.firstTime = false;
+    } else {
+        plot.groupYAxis.remove();
+        transitionData = true;
+    }
+
+
+    for (var i = 0; i < chromosomes.names.length; i++) {
+        var chr_i = chromosomes.data[chromosomes.names[i]];
+
+        if (plot.groupDataChr[chromosomes.names[i]] == null) {
+            plot.groupDataChr[chromosomes.names[i]] = plot.groupData.append("g").attr('id', 'chr' + chromosomes.names[i]);
+        }
+
+        var start_bp_i = chr_i["totalStart"];      // start overall bp length
+        var length_bp_i = chr_i["length"];         // length
+        var end_bp_i = start_bp_i + length_bp_i;   // end overall bp length
+        var start_sx = plot.x(chrMBPToTotalBP(chr_i.name, (0 / 1000000)));           // pixel start
+        var end_sx = plot.x(chrMBPToTotalBP(chr_i.name, (length_bp_i / 1000000)));   // pixel end
+        var length_sx = end_sx - start_sx;                                           // pixel length
+
+        plot.data_chr[chromosomes.names[i]].scale_x = d3.scale.linear().rangeRound([start_sx, end_sx]).domain([start_bp_i, end_bp_i]);
+
+        var line = d3.svg.line().x(function (d) {
+            var val = chrMBPToTotalBP(d['chrom'], parseInt(d['location']));
+            var x1 = plot.data_chr[chromosomes.names[i]].scale_x(val);
+            return x1;
+        }).y(function (d) {
+            return plot.y(parseFloat(d['lod']));
+        });
+
+        // TODO: resample should be configurable
+        var l = plot.data_chr[chromosomes.names[i]].data.length;
+        //var num_elem = Math.ceil(l/length_sx)*4;
+        var num_elem = Math.ceil(l/length_sx)*3;
+        var arr = createGroupedArray(plot.data_chr[chromosomes.names[i]].data, num_elem);
+
+        var nd = [];
+
+        for (var x in arr) {
+            var sub = arr[x];
+            var lrg = sub[0];
+
+            for (var y = 1; y < sub.length; y++) {
+                if (lrg.lod < sub[y].lod) {
+                    lrg = sub[y];
+                }
+            }
+
+            nd.push(lrg);
+        }
+
+        //console.log('length was ', l, 'but now is ', nd.length);
+        //plot.data_chr[chromosomes.names[i]].data = nd;
+        plot.data_chr_filtered[chromosomes.names[i]] = {};
+        plot.data_chr_filtered[chromosomes.names[i]].data = nd;
+
+
+        if (transitionData && !initialize) {
+            mydata = plot.data_chr_filtered[chromosomes.names[i]].data;
+            plot.groupDataChr[chromosomes.names[i]].select('path')
+                //.data(mydata)
+                .transition()
+                .attr("d", line(mydata))
+                .ease("linear")
+                .duration(500);
+        } else {
+            plot.groupNondata.append("rect")
+                .attr("x", start_sx)
+                .attr("y", plot.y)
+                .attr("id", "lod_rect_" + chromosomes.names[i])
+                .attr("width", length_sx)
+                .attr("height", plot.height)
+                .attr("class", 'checkerboard' + ((i % 2) + 1))
+                .on("click", function () {
+                // TODO: fix this hack
+                // a sily way to get the chromosome clicked on
+                var c = this.id.substr(9);
+
+                {% if render_effect_plot %}
+                _G.currentChrom = c;
+                drawEffect(false);
+                {% else %}
+                console.log('FACT VIEWER');
+                {% endif %}
+            });
+
+            var m = measureText(plot.svg, chromosomes.names[i], "x-axis");
+            plot.groupNondata.append("text")
+                .attr("x", start_sx + (length_sx / 2) - (m.width / 2))
+                .attr("y", plot.height + m.height)
+                .text(chromosomes.names[i])
+                .attr("class", "x-axis");
+
+            mydata = plot.data_chr_filtered[chromosomes.names[i]].data;
+            plot.groupDataChr[chromosomes.names[i]]
+                .append("path")
+                .data(mydata)
+                .attr("d", line(mydata))
+                .attr("stroke", "darkslateblue")
+                .attr("stroke-width", 2)
+                .attr("fill", "none")
+                .attr('pointer-events', 'none')
+                //.attr('pointer-events', 'all')
+                .attr("id", "myPath")
+                    .on("mousemove", function(a,b,c) {
+                       console.log(a,b, c);
+                    });
+
+        }
+    }
+
+
+    for (var i = 0; i < chromosomes.names.length; i++) {
+        var chr_i = chromosomes.data[chromosomes.names[i]];
+        var name = chromosomes.names[i];
+
+        if (plot.groupDataCircle[name] != null) {
+            plot.groupDataCircle[name].remove();
+        }
+
+        plot.groupDataCircle[name] = plot.groupData.append('g').attr('id', 'circ' + name);
+
+        plot.groupDataCircle[name].selectAll("circle")
+            .data(plot.data_chr_filtered[name].data)
+            .enter()
+            .append("circle")
+            .attr("r", 5)
+            .attr("class", "plotlod-circle")
+            .attr('id', function (d) {
+                return 'clod_' + d['marker_id'];
+            })
+            .style('fill', 'none')
+            .style('stroke', function(d) {
+                if (d['marker_id'] === plot.maxLod['marker_id']) {
+                    return 'red';
+                } else {
+                    return 'none';
+                }
+            })
+            .style('opacity', function (d) {
+                if (d['marker_id'] === plot.maxLod['marker_id']) {
+                    return 1;
+                } else {
+                    return .1;
+                }
+            })
+            .attr("cx", function (d) {
+                return plot.data_chr[name].scale_x(chrMBPToTotalBP(d["chrom"], parseInt(d["location"])));
+            })
+            .attr("cy", function (d) {
+                return plot.y(d['lod']);
+            })
+            .on("mouseover", function (d) {
+                if (d['marker_id'] != plot.maxLod['marker_id']) {
+                    d3.selectAll('#clod_' + d['marker_id']).attr("r", 5).style("fill", "pink").style("stroke", "blue").style("stroke-width", 1).style("opacity", 1.0);
+                }
+            })
+            .on("mouseout", function (d) {
+                if (d['marker_id'] != plot.maxLod['marker_id']) {
+                    var sval = 'red';
+                    var opacity = 1;
+                    d3.selectAll('#clod_' + d['marker_id']).attr("r", 1).style("fill", "#8C4374").style("stroke", sval).style("stroke-width", 1).style("opacity", 0.1);
+                }
+
+            })
+            .on("click", function (d) {
+                {% if render_effect_plot %}
+                    _G.currentChrom = d['chrom'];
+                    drawEffect(false);
+                {% else %}
+                    _G.currentMarker = d['marker_id'];
+                    downloadFactData(_G.currentFeature, getFactorOrder(), _G.currentMarker);
+                    console.log('PLOT FACT');
+                    console.log(d);
+                {% endif %}
+            });
+    } // end for
+
+    $('#' + plot.id + ' circle').each(function () {
+        var that = $(this);
+        $(this).popover({
+            placement: 'top',
+            html: true,
+            trigger: 'hover',
+            container: 'body',
+            content: function () {
+                var d = this.__data__;
+                var h = "";
+                h += '<table class="table table-condensed">';
+                h += '<tr><td><strong>ID</strong></td><td>' + d['marker_id'] + '</td></tr>'
+                h += '<tr><td><strong>LOD</strong></td><td>' + Number(d['lod']).toFixed(4)  + '</td></tr>'
+                h += '</table>';
+                return h;
+            }
+        });
+    });
+
+
+    if (plot.lodLine) {
+        plot.lodLine.remove();
+    }
+    plot.lodLine = plot.groupData.append("line")
+                          .attr("x1", 0)
+                          .attr("y1", plot.y(_G.lod))
+                          .attr("x2", plot.width)
+                          .attr("y2",  plot.y(_G.lod))
+                          .style("stroke-dasharray", ("3, 3"))
+                          .attr("stroke-width", 1)
+                          .attr("stroke", "red");
+
+    plot.groupYAxis = plot.groupNondata.append("g")
+        .attr("id", "lodYAxis")
+        .attr("class", "y-axis")
+        .call(yAxis);
+
+    _PLOTS.lod = plot;
+}
+
+
+var createGroupedArray = function(arr, chunkSize) {
+    var groups = [], i;
+    for (i = 0; i < arr.length; i += chunkSize) {
+        groups.push(arr.slice(i, i + chunkSize));
+    }
+    return groups;
+}
+
+{% if render_effect_plot %}
+
+
+function drawEffect(initialize) {
+
+    if (initialize) {
+        console.log("Initializing EFFECT plot");
+        initEffect();
+    }
+
+    if (typeof _G.currentChrom === 'undefined') {
+        console.error('whoa');
+    }
+
+
+    if (_PLOTS.effect.groupTop == null) {
+        _PLOTS.effect.groupTop = _PLOTS.effect.svg.append("g").attr('id', 'plotCoefTopGroup');
+    } else {
+        _PLOTS.effect.groupTop.selectAll(".strains").transition();
+        _PLOTS.effect.groupTop.remove();
+        _PLOTS.effect.groupTop = _PLOTS.effect.svg.append("g").attr('id', 'plotCoefTopGroup');
+    }
+
+    var probeLookup = {};
+
+    //console.log("orderedDataset=", orderedDataset);
+
+    // DATA.COEF has the downloaded coef data (to be plotted on y-axis)
+    // DATA.COEF has the downloaded coef data (to be plotted on y-axis)
+
+    // newCoef will contain only matching probeids
+    var newCoef = _PLOTS.effect.data.filter(function (e) {
+        var probeId = e["marker_id"];
+        var match = false;
+        if (_G.currentChrom in _PLOTS.lod.data_chr) {
+            for (var i = 0; i < _PLOTS.lod.data_chr[_G.currentChrom].data.length; i++) {
+                if (probeId === _PLOTS.lod.data_chr[_G.currentChrom].data[i]['marker_id']) {
+                    probeLookup[probeId] = {
+                        chr: _PLOTS.lod.data_chr[_G.currentChrom].data[i]['chrom'],
+                        pos: _PLOTS.lod.data_chr[_G.currentChrom].data[i]['location']
+                    };
+                    return true;
+                }
+            }
+        }
+        return false;
+    });
+
+    // get the keys of the file
+    var keys = d3.keys(newCoef[0]);
+
+    var new_keys = keys.filter(function (key) {
+        return key !== "marker_id";
+    });
+
+    var strains = d3.scale.ordinal().domain(new_keys);
+
+    var strains2 = strains.domain().map(function (name) { // name will be each of the new_keys values
+        return {
+            // switch this to the strain name
+            name: name,
+            // create an array of objects to return
+            values: newCoef.map(function (d) {
+                var pid = d['marker_id'];
+                return {
+                    probeid: pid,
+                    chr: probeLookup[pid].chr,
+                    pos: probeLookup[pid].pos,
+                    modCoef: parseFloat(d[name])
+                };
+            })
+        };
+    });
+
+    var width = _PLOTS.effect.width - 100;
+    var x = d3.scale.linear().range([0, width]);
+    var y = d3.scale.linear().range([_PLOTS.effect.height, 0]);
+
+    x.domain([0, (chromosomes.data[_G.currentChrom]["length"] / 1000000)]);
+
+    y.domain([
+        d3.min(strains2, function (c) {
+            return d3.min(c.values, function (v) {
+                return v.modCoef;
+            });
+        }),
+        d3.max(strains2, function (c) {
+            return d3.max(c.values, function (v) {
+                return v.modCoef;
+            });
+        })
+    ]);
+
+
+
+    var xAxis = d3.svg.axis().scale(x).orient("bottom").tickSize(-_PLOTS.effect.height, -10, 0);
+
+    var yAxis = d3.svg.axis().scale(y).orient("left").ticks(5).tickSize(-width, -10, 0);
+
+    var line = d3.svg.line()
+        .x(function (d) {
+            return x(d.pos);
+        })
+        .y(function (d) {
+            return y(d.modCoef);
+        });
+
+    _PLOTS.effect.groupTop.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", "translate(0," + _PLOTS.effect.height + ")")
+        .call(xAxis);
+
+    _PLOTS.effect.groupTop.append("g")
+        .attr("id", "effectYAxis")
+        .attr("class", "y-axis")
+        .call(yAxis);
+
+    var gStrains = _PLOTS.effect.groupTop.selectAll(".strains")
+        .data(strains2)
+        .enter()
+        .append("g")
+        .attr("class", "strains");
+
+    var path = gStrains.append("path")
+                       .attr("d", function (d) {
+                                      return line(d.values);
+                       })
+                       .attr('id', function (d) {
+                                       return 'line-strain-' + d.name;
+                       })
+                       .attr("stroke", "steelblue")
+                       .attr("stroke-width", "2")
+                       .attr("fill", "none");
+
+    var totalLength = path.node().getTotalLength();
+
+    path.attr("stroke-dasharray", totalLength + " " + totalLength)
+        .attr("stroke-dashoffset", totalLength)
+        .transition()
+        .duration(500)
+        .ease("linear")
+        .attr("stroke-dashoffset", 0);
+}
+
+{% endif %}
+
+
+{% if render_effect_plot %}
+
+function initEffect() {
+    var graphic = $('#plotEffect');
+    graphic.empty();
+    var plot = _PLOTS.effect;
+    plot.id = "plotEffect";
+    var graphic_aspect_width = 3;
+    var graphic_aspect_height = 1;
+    var mobile_threshold = 455;
+    var margin = { top: 20, right: 15, bottom: 35, left: 45 };
+
+    plot.width = graphic.width() - margin.left - margin.right;
+    plot.height = Math.ceil((plot.width * graphic_aspect_height) / graphic_aspect_width) - margin.top - margin.bottom;
+
+    if ((plot.width <= 0) || (plot.height <= 0)) {
+        console.warn("Error in drawing plot");
+        console.warn(plot);
+        return;
+    }
+
+    plot.svg = d3.select('#plotEffect')
+        .append("svg")
+        .attr('id', 'plotEffectSVG')
+        .attr('width', plot.width + margin.left + margin.right)
+        .attr('height', plot.height + margin.top + margin.bottom)
+        .attr('background-color', 'white')
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    plot.strainColors = {};
+
+    // TODO: read strains and generate teh following
+    // LOOK at how to style lines by css
+
+    {%- for strain in strains %}
+    plot.strainColors["{{ strain['strain_id'] }}"] = {'color':"black",'name':"{{ strain['name'] }}"};
+    {%- endfor %}
+
+    plot.legend = {};
+
+    var numStrains = {{ strains|length }};
+    var maxNameLength = 0;
+    var maxNameLengthValue = "";
+    for (s in plot.strainColors) {
+        if (maxNameLength < plot.strainColors[s].name.length) {
+            maxNameLength = plot.strainColors[s].name.length;
+            maxNameLengthValue = plot.strainColors[s].name;
+        }
+    }
+    plot.legend.margin = 5;
+    plot.legend.height = plot.height - (plot.legend.margin * 2);
+
+    var legendTextDim = measureText(plot.svg, maxNameLengthValue, "legend-text");
+    var rectSize = legendTextDim.height;
+    var spacer = 5;
+
+    plot.legend.width = (plot.legend.margin * 2) + (spacer * 2) + legendTextDim.width + rectSize;
+
+    // will stuff fit?
+    var calcHeight = (plot.legend.margin * 2) + (legendTextDim.height + spacer) * numStrains;
+
+    if (plot.height < calcHeight) {
+        console.log("RECALCULATING HEIGHT");
+        console.log("was plot.height = ", plot.height);
+        plot.height = calcHeight;// + margin.top + margin.bottom;
+        console.log("now plot.height = ", plot.height);
+
+        d3.select("#plotEffectSVG").remove();
+
+        plot.svg = d3.select('#plotEffect')
+            .append("svg")
+            .attr('id', 'plotEffectSVG')
+            .attr('width', plot.width + margin.left + margin.right)
+            .attr('height', plot.height + margin.top + margin.bottom)
+            .attr('background-color', 'white')
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    }
+
+    var yTitleDim = measureText(plot.svg, "{{ g.CONF.WWW_EFFECT_Y_AXIS_TEXT }}", "y-axis-title");
+    plot.svg.append("text")
+            .attr("y", 0 - margin.top - (yTitleDim.height/2))
+            .attr("x", -(plot.height/2) - (yTitleDim.width/2))
+            .attr("transform", "rotate(-90)")
+            .text("{{ g.CONF.WWW_EFFECT_Y_AXIS_TEXT }}")
+            .attr("class", "y-axis-title");
+
+    var xTitleDim = measureText(plot.svg, "{{ g.CONF.WWW_EFFECT_X_AXIS_TEXT }}", "x-axis-title");
+    plot.svg.append("text")
+            .attr("y", plot.height + margin.bottom)
+            .attr("x", (plot.width/2) - (xTitleDim.width/2))
+            .text("{{ g.CONF.WWW_EFFECT_X_AXIS_TEXT }}")
+            .attr("class", "x-axis-title");
+
+
+
+        var legendTop = plot.svg.append("g").attr("id", "groupLegend");
+        legendTop.append("rect")
+                .attr('class', 'legend')
+                .style("fill", "#eeeeee")
+                .style("stroke-width", 1)
+                .style('stroke', 'black')
+                .style('shape-rendering', 'crispEdges')
+                .attr("x", plot.width - plot.legend.width)
+                .attr("y", 0)
+                .attr("width", plot.legend.width)
+                .attr("height", calcHeight);
+
+        var legend = legendTop.selectAll('g')
+                .data(function () {
+                    var keys = [];
+                    for (var k in plot.strainColors) {
+                        keys.push(k);
+                    }
+                    return keys;
+                })
+                .enter()
+                .append('g');
+
+        legend.append('rect')
+                .attr('id', function (d, i) {
+                    return 'rect-strain-' + d;
+                })
+                .attr('x', plot.width - plot.legend.width + plot.legend.margin)
+                .attr('y', function (d, i) {
+                    return (i * (rectSize + spacer)) + plot.legend.margin;
+                })
+                .attr('width', rectSize)
+                .attr('height', rectSize)
+                .on("click", function (d) {
+                    var strainLine = plot.svg.select("#strain-" + d);
+                    if (strainLine != null) {
+                        var opacity = strainLine.attr('opacity');
+                        //console.log('opacity=' + opacity);
+                        if (opacity == 0) {
+                            strainLine.transition()
+                                    .attr("opacity", "1")
+                                    .style("stroke-width", "2");
+                        } else {
+                            strainLine.transition()
+                                    .attr("opacity", "0")
+                                    .style("stroke-width", "10");
+
+                        }
+                    }
+
+                })
+
+        legend.append('text')
+                .attr("class", "legend-text")
+                .attr('x', plot.width - plot.legend.width + plot.legend.margin + spacer + rectSize)
+                .attr('y', function (d, i) {
+                    return (i * (rectSize + spacer)) + plot.legend.margin + rectSize;
+                })
+                .text(function (d) {
+                    return plot.strainColors[d].name;
+                });
+
+
+   _PLOTS.effect = plot;
+
+
+}
+
+{%  endif %}
+
+
+function applyLODThreshold(lod_threshold) {
+    //console.debug('lod_threshold=',lod_threshold);
+    drawMatrix(false);
+    /*
+    _PLOTS.matrix.chartBodyCircles.each(function() {
+
+        if (lod_threshold >= $(this)[0].__data__[_settings.MATRIX.lod_score]) {
+            $(this).hide();
+        } else {
+            $(this).show();
+        }
+    });
+    */
+}
+
+
+
+
+function buildHistory() {
+    // cookies, everywhere cookie
+    var feature_data = Cookies.getJSON("feature_data");
+
+    console.log('checking history');
+    if (!cookiesEnabled()) {
+        $('#feature_history_div').html("<br><span class='text-danger'>History requires that cookies are enabled in your browser.</span>");
+        return;
+    }
+
+    if (feature_data) {
+        if (feature_data.length == 1) {
+           $('#searchHistoryStatus').html("<p class='text-right text-muted'><em><small>Showing last selection</small></em></p>");
+        } else {
+           $('#searchHistoryStatus').html("<p class='text-right text-muted'><em><small>Showing last " + feature_data.length.toLocaleString() + " selections</small></em></p>");
+        }
+
+        var tbl = '<table id="historyTable" class="table-condensed">';
+        tbl += '<thead><tr><th>ID</th><th>Symbol</th><th>LOD</th><th>Location</th></tr></thead>';
+        tbl += '<tbody>';
+        for (var i in feature_data) {
+            var feature = feature_data[i];
+            var row = '<tr>';
+
+            row += '<td><a href="#" id="plotMe" feature_id="' + feature['id'] + '">' + feature['id'] + '</a></td>';
+            row += ('<td>' + feature['sym'] + '</td>');
+            row += ('<td>' + Number(feature['lod']).toFixed(4) + '</td>');
+            row += ('<td>' + feature['location'] + '</td></tr>');
+            row += '</tr>';
+            tbl += row;
+        }
+
+        tbl += "</tbody>";
+        tbl += "</table>";
+        $('#feature_history_div').html(tbl);
+
+        $("#historyTable").tablesorter({
+            theme: "bootstrap",
+            widthFixed: true,
+            headerTemplate: '{content} {icon}', // new in v2.7. Needed to add the bootstrap icon!
+            widgets: ["uitheme", "zebra"],
+            widgetOptions: {
+                zebra: ["even", "odd"]
+            }
+        });
+
+        $("#historyTable a").click(function (e) {
+            e.preventDefault();
+            console.log("History Table click, this=", $(this))
+            console.log("History Table click, e=", e)
+            var feature_info = _PLOTS.matrix.ids[$(this).attr('feature_id')];
+            formatFeatureInformation(feature_info);
+            downloadLodData(feature_info[_settings.MATRIX.feature_id]);
+            return false;
+        });
+    } else {
+        $('#feature_history_div').html("<br><span class='text-danger'>No results found.</span>");
+    }
+
+}
+
+$.extend($.tablesorter.themes.bootstrap, {
+    // these classes are added to the table. To see other table classes available,
+    // look here: http://twitter.github.com/bootstrap/base-css.html#tables
+    table      : 'table table-bordered',
+    //header     : 'bootstrap-header', // give the header a gradient background
+    footerRow  : '',
+    footerCells: '',
+    icons      : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+    sortNone   : 'bootstrap-icon-unsorted',
+    sortAsc    : 'icon-chevron-up glyphicon glyphicon-chevron-up',     // includes classes for Bootstrap v2 & v3
+    sortDesc   : 'icon-chevron-down glyphicon glyphicon-chevron-down', // includes classes for Bootstrap v2 & v3
+    active     : '', // applied when column is sorted
+    hover      : '', // use custom css here - bootstrap class may not override it
+    filterRow  : '', // filter row class
+    even       : '', // odd row zebra striping
+    odd        : ''  // even row zebra striping
+  });
+
+
+
+// Returns a function, that, as long as it continues to be invoked, will not
+// be triggered. The function will be called after it stops being called for
+// N milliseconds. If `immediate` is passed, trigger the function on the
+// leading edge, instead of the trailing.
+function debounce(func, wait, immediate) {
+	var timeout;
+	return function() {
+		var context = this, args = arguments;
+		var later = function() {
+			timeout = null;
+			if (!immediate) func.apply(context, args);
+		};
+		var callNow = immediate && !timeout;
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+		if (callNow) func.apply(context, args);
+	};
+};
+
+var debounceLayoutCheck = debounce(function() {
+    var bse = findBootstrapEnvironment();
+    if (_G.bootstrapEnv != bse) {
+        console.log(_G.bootstrapEnv + ' != ' + bse + ' so redrawing')
+        drawMatrix(true);
+        drawLOD(true);
+
+        {% if render_effect_plot %}
+            drawEffect(true, _G.currentChrom);
+
+        {% endif %}
+
+
+
+
+        _G.bootstrapEnv = bse;
+    }
+}, 250);
+
+function findBootstrapEnvironment() {
+    var envs = ["xs", "sm", "md", "lg"];
+    var doc = window.document;
+    var temp = doc.createElement("div");
+
+    doc.body.appendChild(temp);
+
+    for (var i = envs.length - 1; i >= 0; i--) {
+        var env = envs[i];
+
+        temp.className = "hidden-" + env;
+
+        if (temp.offsetParent === null) {
+            doc.body.removeChild(temp);
+            return env;
+        }
+    }
+    return "";
+}
+
+
+$().ready(function () {
+
+    {% if all_datasets | length > 1%}
+    $("#dataset_select").selectpicker({
+        style: 'btn-sm btn-primary',
+        menuStyle: 'dropdown-inverse'
+    });
+
+
+    $("#dataset_select").change(function () {
+
+
+        d3.timer(function() {
+        var selectedDataset = $("#dataset_select").val();
+        if (_G.dataset != selectedDataset) {
+            _G.dataset = selectedDataset;
+
+            console.log('Changing dataset!');
+
+            if (_G.searchResults) {
+                loadMatrixData(findGene(true));
+            } else {
+                loadMatrixData();
+            }
+
+
+            if (_G.currentFeature) {
+                downloadLodData(_G.currentFeature);
+            }
+
+
+        }
+
+        }, 1
+        );
+
+
+    });
+
+
+    {% endif %}
+
+
+    $("#searchResultsChoice").hide();
+
+    if (!loadChromosomeData(_settings.chromosomeDataFile)) {
+        console.log('yikes');
+        return;
+
+    }
+
+
+    initMatrix();
+    initLOD();
+    loadMatrixData();
+
+    //initializePlotLod('plotLod');
+
+    {% if render_effect_plot %}
+    initEffect();
+    {% endif %}
+
+
+
+    $('#searchTerm').keypress(function(e) {
+        var code = e.which ? e.which : e.keyCode;
+        if (code === 13) {
+            $(this).blur();
+            $('#btnGo').focus().click();
+        }
+    });
+
+    $('#btnGo').button().click(function() {
+        findGene();
+        return false;
+    });
+
+    $('#checkboxShow').on('change', function() {
+        showFoundGenes();
+    });
+
+    $('#checkboxHighlight').on('change', function() {
+        highlightFoundGenes();
+    });
+
+    var mySlider = new Slider("#lodSlider", {
+        min: {{ g.CONF.WWW_LOD_THRESHOLD_SLIDER_MIN }},
+        max: {{ g.CONF.WWW_LOD_THRESHOLD_SLIDER_MAX }},
+        step: {{ g.CONF.WWW_LOD_THRESHOLD_SLIDER_STEP }},
+        value: {{ lod_threshold }},
+        tooltip: 'show',
+        tooltip_position: 'top'
+    });
+
+    mySlider.on("slideStop", function(e) {
+        // use just e, which is the new slider value
+        _G.lod = e;
+        $("#currentLodScore").html(_G.lod);
+
+        applyLODThreshold(_G.lod);
+        buildDataListTable(_PLOTS.matrix.data_displayed, _G.lod);
+    });
+
+    mySlider.on("change", function(e) {
+        // use e.newValue, e.oldValue contains old value
+        _G.lod = e.newValue;
+        $("#currentLodScore").html(_G.lod);
+    });
+
+    {% if not render_effect_plot %}
+        _PLOTS.fact.orderCount = getFactorOrder().length;
+
+        $('#factor-view-select').multiselect({
+            onChange: function(option, checked) {
+                if (checked) {
+                    _PLOTS.fact.orderCount++;
+                    $(option).attr('order', _PLOTS.fact.orderCount);
+                }
+                else {
+                    $(option).attr('order', '');
+                }
+            },
+            maxHeight: 400,
+            dropUp: true,
+            buttonWidth: '100%',
+            buttonText: function(options) {
+                if (options.length === 0) {
+                    return 'None selected';
+                }
+                else {
+                    var selected = [];
+                    options.each(function() {
+                        selected.push([$(this).text(), $(this).attr('order')]);
+                    });
+
+                    selected.sort(function(a, b) {
+                        return a[1] - b[1];
+                    });
+
+                    var text = '';
+                    for (var i = 0; i < selected.length; i++) {
+                        text += ((i+1) + ": " + selected[i][0] + ', ');
+                    }
+
+                    return text.substr(0, text.length -2);
+                }
+            },
+        });
+/*
+        $('#example-order-button').on('click', function() {
+            var selected = [];
+            $('#example-order option:selected').each(function() {
+                selected.push([$(this).val(), $(this).data('order')]);
+            });
+
+            selected.sort(function(a, b) {
+                return a[1] - b[1];
+            });
+
+            var text = '';
+            for (var i = 0; i < selected.length; i++) {
+                text += selected[i][0] + ', ';
+            }
+            text = text.substring(0, text.length - 2);
+
+        });
+    });
+*/
+
+    $("#btnFactPlot").on('click', function() {
+        downloadFactData(_G.currentFeature, getFactorOrder())
+    });
+
+    $('#downloadFactPlot').popover({
+        trigger: 'manual',
+        placement: 'left',
+        content: "No Factorial Plot to generate"
+    });
+
+    $("#downloadFactPlot").on('click', function() {
+        if (_G.currentMarker) {
+            saveSvgAsPng(document.getElementById("fact-svg-chart"), "diagramFactorialViewer.png");
+        } else {
+            $('#downloadFactPlot').popover('show');
+            setTimeout(function() {
+                $('#downloadFactPlot').popover('hide');
+            }, 2000);
+        }
+        return false;
+    });
+
+    {%- else -%}
+
+    $('#downloadEffectPlot').popover({
+        trigger: 'manual',
+        placement: 'left',
+        content: "No Effect Plot to generate"
+    });
+
+    $("#downloadEffectPlot").on('click', function() {
+        if (_G.currentMarker) {
+            saveSvgAsPng(document.getElementById("plotEffectSVG"), _G.currentMarker + "_effect.png");
+        } else {
+            $('#downloadEffectPlot').popover('show');
+            setTimeout(function() {
+                $('#downloadEffectPlot').popover('hide');
+            }, 2000);
+        }
+        return false;
+    });
+
+    {%- endif -%}
+
+    buildHistory();
+
+    _G.bootstrapEnv = findBootstrapEnvironment();
+    window.addEventListener('resize', debounceLayoutCheck);
+
+    $('#downloadLODPlot').popover({
+        trigger: 'manual',
+        placement: 'left',
+        content: "No LOD Plot to generate"
+    });
+
+    $("#downloadLODPlot").on('click', function() {
+        if (_G.currentFeature) {
+            saveSvgAsPng(document.getElementById("plotLODSVG"), _G.currentFeature + "_lod.png");
+        } else {
+            $('#downloadLODPlot').popover('show');
+            setTimeout(function() {
+                $('#downloadLODPlot').popover('hide');
+            }, 2000);
+        }
+        return false;
+    });
+
+});
+</script>
+
+{% endblock %}

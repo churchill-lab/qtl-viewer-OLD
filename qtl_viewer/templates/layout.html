@@ -1,0 +1,80 @@
+<!--
+Copyright (c) 2015 Matthew Vincent, The Churchill Lab
+
+This software was developed by Gary Churchill's Lab.
+(see http://research.jax.org/faculty/churchill)
+
+This is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This software is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this software. If not, see <http://www.gnu.org/licenses/>.
+//-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+    <title>{{ g.WWW_APP_HEADER }}</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/bootstrap-3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/font-awesome-4.4.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{{request.URL_BASE}}/static/css/style.css">
+    <!--
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu">
+    //-->
+    <link rel="shortcut icon" href="{{request.URL_BASE}}/static/images/favicon.ico">
+
+    {% block head %}
+    {% endblock %}
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+    <div id="content" class="container">
+        <!-- HEADER //-->
+        <div class="churchill-banner">
+            <div class="row">
+                <div class="col-md-6 vcenter">
+                    <a href="#"><img src="http://cgd2.jax.org/drupch/sites/default/files/churchill-logo.gif" style="height:90px; padding:15px"></a>
+                </div>
+                <div class="col-md-6 vcenter">
+                    <a href="#"><img class="pull-right" src="http://cgd2.jax.org/drupch/sites/default/files/JAXLogo.gif" style="height:60px; padding:25px 25px 0px 0px"></a>
+                </div>
+            </div>
+        </div>
+        <!-- END HEADER //-->
+        {% block content %}{% endblock %}
+    </div>
+    <!-- /.container -->
+
+{% block extrahtml %}
+{% endblock %}
+
+<script src="{{request.URL_BASE}}/static/js/jquery-2.0.3.min.js"></script>
+<script src="{{request.URL_BASE}}/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+
+{% block javascript %}
+{% endblock %}
+
+</body>
+</html>

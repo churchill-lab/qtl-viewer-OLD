@@ -1,0 +1,470 @@
+/*
+html {font-family: 'Ubuntu', sans-serif;}
+body {background-color: whitesmoke; font-family: 'Ubuntu', sans-serif;}
+*/
+
+html {font-family: Arial, Verdana, Helvetica, sans-serif;}
+body {background-color: whitesmoke; font-family: Arial, Verdana, Helvetica, sans-serif;}
+
+
+
+.app_header {
+	font-size: 34pt;
+}
+
+.dataset_text {
+	text-align: right;
+	color: #777;
+	font-style: italic;
+}
+
+path {
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+
+/* background of plot, and border */
+#plotMatrixSVG .plot { fill: rgba(222, 222, 222, 1.0); stroke-width: 1; stroke: black; shape-rendering: auto; }
+/* chromsome names on x axis*/
+#plotMatrixSVG .x-axis { font-family: 'Ubuntu', sans-serif; font-size: 12px; fill:black; font-weight:bold; }
+/* axis end lines  */
+#plotMatrixSVG .x-axis path { fill: none; stroke: none; shape-rendering: auto; }
+/* axis tick marks */
+#plotMatrixSVG .x-axis line { fill: none; stroke: black; shape-rendering: auto; }
+/* x axis title */
+#plotMatrixSVG .x-axis-title { font-family: 'Ubuntu', sans-serif; font-size: 16px; fill:black; font-weight:bold; }
+/* chromosome pseudo tick lines (shows chromosome boundaries)*/
+#plotMatrixSVG .x-grid .tick { stroke: rgb(150,150,150); stroke-width: 1; shape-rendering: auto; }
+/* chromsome names on y axis*/
+#plotMatrixSVG .y-axis { font-family: 'Ubuntu', sans-serif; font-size: 10px; fill:black; font-weight:bold; }
+/* axis end lines  */
+#plotMatrixSVG .y-axis path { fill: none; stroke: none; shape-rendering: auto; }
+/* axis tick marks */
+#plotMatrixSVG .y-axis line { fill: none; stroke: black; shape-rendering: auto; }
+/* x axis title */
+#plotMatrixSVG .y-axis-title { font-family: 'Ubuntu', sans-serif; font-size: 16px; fill:black; font-weight:bold; }
+/* chromosome pseudo tick lines (shows chromosome boundaries)*/
+#plotMatrixSVG .y-grid .tick { stroke: rgb(150,150,150); stroke-width: 1; shape-rendering: auto; }
+/* circles */
+/*
+#plotMatrixSVG .dot { pointer-events:all; shape-rendering: auto; }
+*/
+#plotMatrixSVG .highlight { fill: red; }
+/*
+#plotMatrixSVG {pointer-events:none}
+*/
+
+
+#plotMatrixSVG .progress-meter .background {
+shape-rendering: auto;  fill: #ddd;
+}
+
+#plotMatrixSVG .progress-meter .foreground {
+shape-rendering: auto;  fill: rgb(107, 149, 62);
+}
+
+#plotMatrixSVG .progress-meter text {
+shape-rendering: auto;
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+
+
+#plotLODSVG { background-color:white; }
+#plotLODSVG .plot { fill: rgba(222, 222, 222, 1.0); stroke-width: 1; stroke: black; shape-rendering: auto; }
+#plotLODSVG .x-axis { font-family: 'Ubuntu', sans-serif; font-size: 10px; fill: black; font-weight:bold; }
+#plotLODSVG .x-axis-title { font-family: 'Ubuntu', sans-serif; font-size: 16px; fill: black; font-weight:bold; }
+#plotLODSVG .x-axis line { fill: none; stroke: black; shape-rendering: auto; }
+#plotLODSVG .x.axis path { fill: none; stroke: none; shape-rendering: auto; }
+#plotLODSVG .y-axis { font-family: 'Ubuntu', sans-serif; font-size: 10px; fill:black; font-weight:bold; }
+#plotLODSVG .y-axis line { fill: none; stroke: white; shape-rendering: auto; }
+#plotLODSVG .y-axis path { fill: none; stroke: none; shape-rendering: auto; }
+#plotLODSVG .y-axis-title { font-family: 'Ubuntu', sans-serif; font-size: 16px; fill:black; font-weight:bold; }
+#plotLODSVG .checkerboard1 { fill:rgb(200, 200, 200); stroke-width: 1; shape-rendering: auto; }
+#plotLODSVG .checkerboard2 { fill:rgb(230, 230, 230); stroke-width: 1; shape-rendering: auto; }
+#plotLODSVG .plotlod-circle { pointer-events:all;}
+
+
+#plotEffectSVG { background-color:white; }
+#plotEffectSVG .plot { fill: rgba(222, 222, 222, 1.0); stroke-width: 1; stroke: black; shape-rendering: auto; }
+#plotEffectSVG .x-axis { font-family: 'Ubuntu', sans-serif; font-size: 10px; fill: black; font-weight:bold; }
+#plotEffectSVG .x-axis-title { font-family: 'Ubuntu', sans-serif; font-size: 16px; fill: black; font-weight:bold; }
+#plotEffectSVG .x-axis line { fill: none; stroke: lightgray; shape-rendering: auto; }
+#plotEffectSVG .x-axis path { fill: none; stroke: black; stroke-width: 1;  shape-rendering: auto; } /* bottom line*/
+#plotEffectSVG .y-axis { font-family: 'Ubuntu', sans-serif; font-size: 10px; fill:black; font-weight:bold; }
+#plotEffectSVG .y-axis line { fill: none; stroke: lightgray; shape-rendering: auto; }
+#plotEffectSVG .y-axis path { fill: none; stroke: black; shape-rendering: auto; }
+#plotEffectSVG .y-axis-title { font-family: 'Ubuntu', sans-serif; font-size: 16px; fill:black; font-weight:bold; }
+#plotEffectSVG .legend { fill: rgba(222, 222, 222, 1.0); stroke-width: 1; stroke: black; shape-rendering: auto; }
+#plotEffectSVG .legend-text { font-family: 'Ubuntu', sans-serif; font-size: 9px; fill:black; font-weight:bold; }
+#plotEffectSVG .strains-line {
+    fill: none;
+}
+
+div.popover.my-custom-class{
+    max-width: 400px;
+    min-width: 300px;
+}
+
+
+/* portlets */
+.content {
+	padding: 30px;
+	background: #f1f3fa;
+}
+
+.margin-bottom-30 {
+	margin-bottom: 30px;
+}
+
+/* Portlet */
+.portlet {
+	background: #fff;
+	padding: 20px;
+}
+
+.portlet.portlet-gray {
+	background: #f7f7f7;
+}
+
+.portlet.portlet-bordered {
+	border: 1px solid #eee;
+}
+
+/* Portlet Title */
+.portlet-title {
+	padding: 0;
+  	min-height: 40px;
+  	border-bottom: 1px solid #eee;
+  	margin-bottom: 18px;
+}
+
+.portlet-title-nobody {
+	padding: 0;
+  	min-height: 30px;
+}
+
+.caption {
+	float: left;
+	display: inline-block;
+	font-size: 18px;
+	line-height: 18px;
+}
+
+.caption.caption-green .caption-subject,
+.caption.caption-green i {
+	color: #4db3a2;
+	font-weight: 200;
+}
+
+.caption.caption-red .caption-subject,
+.caption.caption-red i {
+	color: #e26a6a;
+	font-weight: 200;
+}
+
+.caption.caption-purple .caption-subject,
+.caption.caption-purple i {
+	color: #8775a7;
+	font-weight: 400;
+}
+
+.caption i {
+	color: #777;
+	font-size: 15px;
+	font-weight: 300;
+	margin-top: 3px;
+}
+
+.caption-subject {
+	color: #666;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.caption-helper {
+	padding: 0;
+	margin: 0;
+	line-height: 13px;
+	color: #9eacb4;
+	font-size: 13px;
+	font-weight: 400;
+}
+
+/* Actions */
+.actions {
+	float: right;
+  	display: inline-block;
+}
+
+.actions a {
+	margin-left: 3px;
+}
+
+.actions .btn {
+	color: #666;
+	padding: 3px 9px;
+	font-size: 13px;
+  	line-height: 1.5;
+  	background-color: #fff;
+  	border-color: #ccc;
+  	border-radius: 50px;
+}
+
+.actions .btn i {
+	font-size: 12px;
+}
+
+.actions .btn:hover {
+	background: #f2f2f2;
+}
+
+/* Pagination */
+.pagination {
+	margin: -3px 0 0;
+	border-radius: 50px;
+}
+
+.pagination > li > a,
+.pagination > li > span {
+	padding: 4px 10px;
+	font-size: 12px;
+	color: #8775a7;
+	background: #f7f7f7;
+}
+
+.pagination > li:hover > a,
+.pagination > li.active > a,
+.pagination > li.active:hover > a {
+	color: #fff;
+	background: #8775a7;
+	border-color: #8775a7;
+}
+
+/* Inputs */
+.inputs {
+	float: right;
+	display: inline-block;
+	padding: 4px 0;
+	margin-top: -10px;
+}
+
+.input-inline {
+	width: 240px;
+	display: inline-block;
+	vertical-align: middle;
+}
+
+/* Tab */
+.portlet-title > .nav-tabs {
+	background: none;
+	margin: 0;
+	float: right;
+	display: inline-block;
+	border: 0;
+}
+
+.portlet-title > .nav-tabs > li {
+	background: none;
+	margin: 0;
+	border: 0;
+}
+
+.portlet-title > .nav-tabs > li > a {
+	background: none;
+	border: 0;
+	padding: 2px 10px 13px;
+	color: #444;
+}
+
+.portlet-title > .nav-tabs > li.active,
+.portlet-title > .nav-tabs > li.active:hover {
+  	border-bottom: 4px solid #46aace;
+  	position: relative;
+  }
+
+  .portlet-title > .nav-tabs > li:hover {
+  	border-bottom: 4px solid #4fbfe8;
+  }
+
+.portlet-title > .nav-tabs > li.active > a,
+.portlet-title > .nav-tabs > li:hover > a {
+	color: #333;
+	background: #fff;
+	border: 0;
+}
+
+/* Btn Circle */
+.actions .btn.btn-circle {
+	width: 28px;
+	height: 28px;
+	padding: 3px 7px;
+	text-align: center;
+}
+
+.actions .btn.btn-circle i {
+	font-size: 11px;
+}
+
+/* Btn Grey Salsa */
+.actions .btn.grey-salsa {
+	border: none;
+	margin-left: 3px;
+	box-shadow: none;
+	border-radius: 50px !important;
+}
+
+.actions .btn.grey-salsa.active {
+	color: #fafcfb;
+	background: #8e9bae;
+}
+  .actions .grey-salsa.btn:hover,
+  .actions .grey-salsa.btn:focus,
+  .actions .grey-salsa.btn:active,
+  .actions .grey-salsa.btn.active {
+	color: #fafcfb;
+	background: #97a3b4;
+}
+
+/* Btn Red */
+.actions .btn.btn-red.active,
+.actions .btn.btn-red:hover {
+	color: #fff;
+	box-shadow: none;
+	background: #e26a6a;
+	border-color: #e26a6a;
+}
+
+/* Btn Purple */
+.actions .btn.btn-purple.active,
+.actions .btn.btn-purple:hover {
+	color: #fff;
+	box-shadow: none;
+	background: #8775a7;
+	border-color: #8775a7;
+}
+
+/* Btn Blue */
+.actions .btn.btn-blue.active,
+.actions .btn.btn-blue:hover {
+	color: #fff;
+	box-shadow: none;
+	background: #337ab7;
+	border-color: #337ab7;
+}
+
+
+/* D3 style */
+#fact-svg-chart            .chart {
+            }
+
+#fact-svg-chart            .plot-content text {
+                font-family: 'Ubuntu', sans-serif;
+            }
+
+#fact-svg-chart            .axis line, .axis path {
+                shape-rendering: auto;
+                stroke: black;
+                fill: none;
+            }
+
+#fact-svg-chart            .centered-checkbox {
+                vertical-align: middle !important;
+                margin: 0px !important;
+                font-weight: normal;
+            }
+
+#fact-svg-chart            .data-point {
+                fill: rgba(70, 130, 180, 0.25);
+            }
+
+#fact-svg-chart            #cursor-status {
+                display: none;
+                position: absolute;
+                background-color: rgba(228, 255, 136, 0.3);
+                pointer-events: none;
+                white-space: nowrap;
+            }
+
+#fact-svg-chart            #cursor-status td {
+                border: 2px solid lightgrey;
+            }
+
+#fact-svg-chart            .separator-line {
+                stroke: lightgray;
+            }
+
+#fact-svg-chart            .plot-title {
+                font-size: x-large !important;
+            }
+
+#fact-svg-chart            .axis-label {
+                font-size: large !important;
+            }
+
+#fact-svg-chart            .whiskers {
+                stroke: black;
+	            stroke-width: 1px;
+            }
+
+#fact-svg-chart            .circle-data-point {
+                fill:whitesmoke;
+	            stroke: steelblue;
+	              stroke-width: 1px;
+	              r: 2px;
+	shape-rendering: auto;
+
+            }
+
+#fact-svg-chart .x-axis { font-family: 'Ubuntu', sans-serif; font-size: 10px; fill: black; font-weight:bold; }
+#fact-svg-chart .x-axis-label { font-family: 'Ubuntu', sans-serif; font-size: 16px; fill: black; font-weight:bold; }
+#fact-svg-chart .x-axis line { fill: none; stroke: black; shape-rendering: auto; }
+#fact-svg-chart .x.axis path { fill: none; stroke: none; shape-rendering: auto; }
+#fact-svg-chart .y-axis { font-family: 'Ubuntu', sans-serif; font-size: 10px; fill:black; font-weight:bold; }
+#fact-svg-chart .y-axis line { fill: none; stroke: white; shape-rendering: auto; }
+#fact-svg-chart .y-axis path { fill: none; stroke: none; shape-rendering: auto; }
+#fact-svg-chart .y-axis-label { font-family: 'Ubuntu', sans-serif; font-size: 16px; fill:black; font-weight:bold; }
+
+
+
+#rect-strain-A { fill: #F0F000; stroke: none; }
+#rect-strain-B { fill: #808080; stroke: none; }
+#rect-strain-C { fill: #F08080; stroke: none; }
+#rect-strain-D { fill: #1010F0; stroke: none; }
+#rect-strain-E { fill: #00A0F0; stroke: none; }
+#rect-strain-F { fill: #00A000; stroke: none; }
+#rect-strain-G { fill: #F00000; stroke: none; }
+#rect-strain-H { fill: #9000E0; stroke: none; }
+
+#line-strain-A { stroke: #F0F000; fill: none; }
+#line-strain-B { stroke: #808080; fill: none; }
+#line-strain-C { stroke: #F08080; fill: none; }
+#line-strain-D { stroke: #1010F0; fill: none; }
+#line-strain-E { stroke: #00A0F0; fill: none; }
+#line-strain-F { stroke: #00A000; fill: none; }
+#line-strain-G { stroke: #F00000; fill: none; }
+#line-strain-H { stroke: #9000E0; fill: none; }
+
+/*
+#line-strain-A { stroke: #F0F000; fill: none; shape-rendering: auto; }
+#line-strain-B { stroke: #808080; fill: none; shape-rendering: auto; }
+#line-strain-C { stroke: #F08080; fill: none; shape-rendering: auto; }
+#line-strain-D { stroke: #1010F0; fill: none; shape-rendering: auto; }
+#line-strain-E { stroke: #00A0F0; fill: none; shape-rendering: auto; }
+#line-strain-F { stroke: #00A000; fill: none; shape-rendering: auto; }
+#line-strain-G { stroke: #F00000; fill: none; shape-rendering: auto; }
+#line-strain-H { stroke: #9000E0; fill: none; shape-rendering: auto; }
+*/
+.churchill-banner {
+	background-color: #6B953E;
+	height:90px;
+
+}
+
+.vcenter {
+    display: inline-block;
+    vertical-align: middle;
+}
