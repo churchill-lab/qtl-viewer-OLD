@@ -550,30 +550,15 @@ def pvalue2lodtable(dataset, x_min, x_max):
     return vals
 
 if __name__ == '__main__':
-    HDF5_FILENAME = 'data/btbr_compression.h5'
+    if len(sys.argv) > 1:
+        HDF5_FILENAME = sys.argv[1]
+    else:
+        print 'Please supply an HDF file.'
+        sys.exit()
+
     init()
-    #h5f = h5py.File('data/new_data.h5')
-    #print get_datasets()
+    generate_matrix_files()
 
-    #strains = get_strains('example')
-    #for s in strains:
-    #    print s['strain_id'], s['name']
-
-    #print get_effect_data('example', 'ENSMUSG00000004446')
-
-    #print get_genotypes('example', '1_2118117')
-    #print get_factors_phenotypes('example', '1_2118117')
-
-
-    #generate_matrix_files()
-
-    #print has_pval('exampleB')
-    #generate_matrix_file('exampleA')
-
-    #print pvalue2lod(0.0001, 7), pvalue2lod(0.0001, 14)
-    #print pvalue2lod(0.000001, 7), pvalue2lod(0.000001, 14)
-
-    print str(pvalue2lodtable('adipose', 1, 16))
 
 
 

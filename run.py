@@ -14,7 +14,7 @@ if __name__ == "__main__":
         settings_file = sys.argv[1]
     else:
         print 'Please supply a configurations/settings file.'
-        sys.exit();
+        sys.exit()
 
     settings_file = os.path.abspath(settings_file)
 
