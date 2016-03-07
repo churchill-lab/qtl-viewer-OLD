@@ -68,6 +68,7 @@ if __name__ == "__main__":
     print 'Use {}'.format(CONF.URL_BASE)
 
     # configure all WWW settings
+    CONF.WWW_BANNER = app.config['WWW_BANNER']
     CONF.WWW_APP_HEADER = app.config['WWW_APP_HEADER']
     CONF.WWW_DATASET_TEXT = app.config['WWW_DATASET_TEXT']
     CONF.WWW_DATASET_DEFAULT = app.config['WWW_DATASET_DEFAULT']

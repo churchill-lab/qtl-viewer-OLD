@@ -51,18 +51,20 @@ along with this software. If not, see <http://www.gnu.org/licenses/>.
 
 <body>
     <div id="content" class="container">
-        <!-- HEADER //-->
+        {% if g.CONF.WWW_BANNER %}
+        <!-- BANNER //-->
         <div class="churchill-banner">
             <div class="row">
                 <div class="col-md-6 vcenter">
-                    <a href="#"><img src="http://cgd2.jax.org/drupch/sites/default/files/churchill-logo.gif" style="height:90px; padding:15px"></a>
+                    <a href="#"><img src="{{request.URL_BASE}}/static/images/churchill-logo.gif" style="height:90px; padding:15px"></a>
                 </div>
                 <div class="col-md-6 vcenter">
-                    <a href="#"><img class="pull-right" src="http://cgd2.jax.org/drupch/sites/default/files/JAXLogo.gif" style="height:60px; padding:25px 25px 0px 0px"></a>
+                    <a href="#"><img class="pull-right" src="{{request.URL_BASE}}/static/images/JAXLogo.gif" style="height:60px; padding:25px 25px 0px 0px"></a>
                 </div>
             </div>
         </div>
-        <!-- END HEADER //-->
+        <!-- END BANNER //-->
+        {% endif %}
         {% block content %}{% endblock %}
     </div>
     <!-- /.container -->
