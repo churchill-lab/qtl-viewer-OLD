@@ -209,8 +209,8 @@ def generate_matrix_file(dataset, output_file=None, delimiter='\t'):
                     f['chrom'], f['location'],
                     f['name'], f['description'],
                     m['marker_id'], m['chrom'],
-                    m['location'], m['name'],
-                    m['description'], rec[marker_idx], p]
+                    m['location'], m['name'] if 'name' in m else '',
+                    m['description'] if 'description' in m else '', rec[marker_idx], p]
             out.write(delimiter.join(map(str, line)))
             out.write('\n')
 
