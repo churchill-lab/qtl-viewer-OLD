@@ -23,145 +23,148 @@ along with this software. If not, see <http://www.gnu.org/licenses/>.
 import sqlite3
 import re
 
-from flask import g
-
 DATABASE = ''
 
 
 def connect_to_database():
     return sqlite3.connect(DATABASE)
 
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = connect_to_database()
-    db.row_factory = sqlite3.Row
-    return db
-
 REGEX_ENSEMBL_MOUSE_ID = re.compile("ENSMUS([EGTP])[0-9]{11}", re.IGNORECASE)
 REGEX_ENSEMBL_HUMAN_ID = re.compile("ENS([EGTP])[0-9]{11}", re.IGNORECASE)
 REGEX_MGI_ID = re.compile("MGI:[0-9]{1,}", re.IGNORECASE)
-REGEX_LOCATION = re.compile("(CHR|)*\s*([0-9]{1,2}|X|Y|MT)\s*(-|:)?\s*(\d+)\s*(MB|M|K|)?\s*(-|:|)?\s*(\d+|)\s*(MB|M|K|)?", re.IGNORECASE)
+REGEX_REGION = re.compile("(CHR|)*\s*([0-9]{1,2}|X|Y|MT)\s*(-|:)?\s*(\d+)\s*(MB|M|K|)?\s*(-|:|)?\s*(\d+|)\s*(MB|M|K|)?", re.IGNORECASE)
 
 
 SQL_TERM_EXACT = '''
-SELECT MAX(s.text_score||'||'||s.score_description||'||'||e.text_value) AS match_description, e.ensembl_gene_id, g.*
+SELECT MAX(s.score||'||'||s.description||'||'||e.lookup_value) AS match_description, l.ensembl_gene_id, g.*
   FROM ensembl_genes g,
-       ensembl_genes_lookup e,
-       text_type_score s
-WHERE g.ensembl_gene_id = e.ensembl_gene_id
-  AND e.text_type = s.text_type
-  AND e.text_value = :term
-GROUP BY e.ensembl_gene_id
+       ensembl_genes_lookup l,
+       search_ranking s
+WHERE g.ensembl_gene_id = l.ensembl_gene_id
+  AND l.ranking_id = s.ranking_id
+  AND l.lookup_value = :term
+GROUP BY l.ensembl_gene_id
 ORDER BY match_description - length(match_description) DESC, g.symbol ASC
 '''
 
 SQL_TERM_EXACT_MM = '''
-SELECT MAX(s.text_score||'||'||s.score_description||'||'||e.text_value) AS match_description, e.ensembl_gene_id, g.*
+SELECT MAX(s.score||'||'||s.description||'||'||e.lookup_value) AS match_description, l.ensembl_gene_id, g.*
   FROM ensembl_genes g,
-       ensembl_genes_lookup e,
-       text_type_score s
-WHERE g.ensembl_gene_id = e.ensembl_gene_id
-  AND e.text_type = s.text_type
-  AND e.text_value = :term
-  AND e.species_id = 'Mm'
-GROUP BY e.ensembl_gene_id
+       ensembl_genes_lookup l,
+       search_ranking s
+WHERE g.ensembl_gene_id = l.ensembl_gene_id
+  AND l.ranking_id = s.ranking_id
+  AND l.lookup_value = :term
+  AND l.species_id = 'Mm'
+GROUP BY l.ensembl_gene_id
 ORDER BY match_description - length(match_description) DESC, g.symbol ASC
 '''
 
 SQL_TERM_EXACT_HS = '''
-SELECT MAX(s.text_score||'||'||s.score_description||'||'||e.text_value) AS match_description, e.ensembl_gene_id, g.*
+SELECT MAX(s.score||'||'||s.description||'||'||e.lookup_value) AS match_description, l.ensembl_gene_id, g.*
   FROM ensembl_genes g,
-       ensembl_genes_lookup e,
-       text_type_score s
-WHERE g.ensembl_gene_id = e.ensembl_gene_id
-  AND e.text_type = s.text_type
-  AND e.text_value = :term
-  AND e.species_id = 'Hs'
-GROUP BY e.ensembl_gene_id
+       ensembl_genes_lookup l,
+       search_ranking s
+WHERE g.ensembl_gene_id = l.ensembl_gene_id
+  AND l.ranking_id = s.ranking_id
+  AND l.lookup_value = :term
+  AND l.species_id = 'Hs'
+GROUP BY l.ensembl_gene_id
 ORDER BY match_description - length(match_description) DESC, g.symbol ASC
 '''
 
 SQL_TERM_LIKE = '''
-SELECT MAX(s.text_score||'||'||s.score_description||'||'||e.text_value) AS match_description, e.ensembl_gene_id, g.*
+SELECT MAX(s.score||'||'||s.description||'||'||l.lookup_value) AS match_description, l.ensembl_gene_id, g.*
   FROM ensembl_genes g,
-       ensembl_genes_lookup e,
-       text_type_score s
-WHERE g.ensembl_gene_id = e.ensembl_gene_id
-  AND e.text_type = s.text_type
-  AND e.text_value like :term
-GROUP BY e.ensembl_gene_id
+       ensembl_genes_lookup l,
+       ensembl_search es,
+       search_ranking s
+WHERE g.ensembl_gene_id = l.ensembl_gene_id
+  AND l.ranking_id = s.ranking_id
+  AND es._ensembl_genes_lookup_key = l._ensembl_genes_lookup_key
+  AND es.lookup_value MATCH :term
+GROUP BY l.ensembl_gene_id
 ORDER BY match_description - length(match_description) DESC, g.symbol ASC
 '''
 
 SQL_TERM_LIKE_MM = '''
-SELECT MAX(s.text_score||'||'||s.score_description||'||'||e.text_value) AS match_description, e.ensembl_gene_id, g.*
+SELECT MAX(s.score||'||'||s.description||'||'||l.lookup_value) AS match_description, l.ensembl_gene_id, g.*
   FROM ensembl_genes g,
-       ensembl_genes_lookup e,
-       text_type_score s
-WHERE g.ensembl_gene_id = e.ensembl_gene_id
-  AND e.text_type = s.text_type
-  AND e.text_value like :term
-  AND e.species_id = 'Mm'
-GROUP BY e.ensembl_gene_id
+       ensembl_genes_lookup l,
+       ensembl_search es,
+       search_ranking s
+WHERE g.ensembl_gene_id = l.ensembl_gene_id
+  AND l.ranking_id = s.ranking_id
+  AND es._ensembl_genes_lookup_key = l._ensembl_genes_lookup_key
+  AND es.lookup_value MATCH :term
+  AND l.species_id = 'Mm'
+GROUP BY l.ensembl_gene_id
 ORDER BY match_description - length(match_description) DESC, g.symbol ASC
 '''
 
 SQL_TERM_LIKE_HS = '''
-SELECT MAX(s.text_score||'||'||s.score_description||'||'||e.text_value) AS match_description, e.ensembl_gene_id, g.*
+SELECT MAX(s.score||'||'||s.description||'||'||l.lookup_value) AS match_description, l.ensembl_gene_id, g.*
   FROM ensembl_genes g,
-       ensembl_genes_lookup e,
-       text_type_score s
-WHERE g.ensembl_gene_id = e.ensembl_gene_id
-  AND e.text_type = s.text_type
-  AND e.text_value like :term
-  AND e.species_id = 'Hs'
-GROUP BY e.ensembl_gene_id
+       ensembl_genes_lookup l,
+       ensembl_search es,
+       search_ranking s
+WHERE g.ensembl_gene_id = l.ensembl_gene_id
+  AND l.ranking_id = s.ranking_id
+  AND es._ensembl_genes_lookup_key = l._ensembl_genes_lookup_key
+  AND es.lookup_value MATCH :term
+  AND l.species_id = 'Hs'
+GROUP BY l.ensembl_gene_id
 ORDER BY match_description - length(match_description) DESC, g.symbol ASC
 '''
 
 SQL_ID = '''
-SELECT MAX(s.text_score||'||'||s.score_description||'||'||e.text_value) AS match_description, e.ensembl_gene_id, g.*
+SELECT MAX(s.score||'||'||s.description||'||'||l.lookup_value) AS match_description, l.ensembl_gene_id, g.*
   FROM ensembl_genes g,
-       ensembl_genes_lookup e,
-       text_type_score s
-WHERE g.ensembl_gene_id = e.ensembl_gene_id
-  AND e.text_type = s.text_type
-  AND e.text_value = :term
-  AND e.text_type in ('MI', 'EG', 'ET', 'EE', 'HI')
-GROUP BY e.ensembl_gene_id
+       ensembl_genes_lookup l,
+       ensembl_search es,
+       search_ranking s
+WHERE g.ensembl_gene_id = l.ensembl_gene_id
+  AND l.ranking_id = s.ranking_id
+  AND es._ensembl_genes_lookup_key = l._ensembl_genes_lookup_key
+  AND l.ranking_id in ('MI', 'EG', 'ET', 'EE', 'EP', 'HI')
+  AND es.lookup_value MATCH :term
+GROUP BY l.ensembl_gene_id
 ORDER BY match_description - length(match_description) DESC, g.symbol ASC
 '''
 
 SQL_ID_MM = '''
-SELECT MAX(s.text_score||'||'||s.score_description||'||'||e.text_value) AS match_description, e.ensembl_gene_id, g.*
+SELECT MAX(s.score||'||'||s.description||'||'||l.lookup_value) AS match_description, l.ensembl_gene_id, g.*
   FROM ensembl_genes g,
-       ensembl_genes_lookup e,
-       text_type_score s
-WHERE g.ensembl_gene_id = e.ensembl_gene_id
-  AND e.text_type = s.text_type
-  AND e.text_value = :term
-  AND e.species_id = 'Mm'
-  AND e.text_type in ('MI', 'EG', 'ET', 'EE', 'HI')
-GROUP BY e.ensembl_gene_id
+       ensembl_genes_lookup l,
+       ensembl_search es,
+       search_ranking s
+WHERE g.ensembl_gene_id = l.ensembl_gene_id
+  AND l.ranking_id = s.ranking_id
+  AND es._ensembl_genes_lookup_key = l._ensembl_genes_lookup_key
+  AND l.species_id = 'Mm'
+  AND l.ranking_id in ('MI', 'EG', 'ET', 'EE', 'EP', 'HI')
+  AND es.lookup_value MATCH :term
+GROUP BY l.ensembl_gene_id
 ORDER BY match_description - length(match_description) DESC, g.symbol ASC
 '''
 
 SQL_ID_HS = '''
-SELECT MAX(s.text_score||'||'||s.score_description||'||'||e.text_value) AS match_description, e.ensembl_gene_id, g.*
+SELECT MAX(s.score||'||'||s.description||'||'||l.lookup_value) AS match_description, l.ensembl_gene_id, g.*
   FROM ensembl_genes g,
-       ensembl_genes_lookup e,
-       text_type_score s
-WHERE g.ensembl_gene_id = e.ensembl_gene_id
-  AND e.text_type = s.text_type
-  AND e.text_value = :term
-  AND e.species_id = 'Hs'
-  AND e.text_type in ('MI', 'EG', 'ET', 'EE', 'HI')
-GROUP BY e.ensembl_gene_id
+       ensembl_genes_lookup l,
+       ensembl_search es,
+       search_ranking s
+WHERE g.ensembl_gene_id = l.ensembl_gene_id
+  AND l.ranking_id = s.ranking_id
+  AND es._ensembl_genes_lookup_key = l._ensembl_genes_lookup_key
+  AND l.species_id = 'Hs'
+  AND l.ranking_id in ('MI', 'EG', 'ET', 'EE', 'EP', 'HI')
+  AND es.lookup_value MATCH :term
+GROUP BY l.ensembl_gene_id
 ORDER BY match_description - length(match_description) DESC, g.symbol ASC
 '''
 
-SQL_LOCATION = '''
+SQL_REGION = '''
 SELECT *
   FROM ensembl_genes e
  WHERE e.chromosome = :chromosome
@@ -170,7 +173,7 @@ SELECT *
  ORDER BY cast(replace(replace(replace(e.chromosome, 'X', '50'), 'Y', '51'), 'MT', 51) AS int), e.start_position, e.end_position
 '''
 
-SQL_LOCATION_MM = '''
+SQL_REGION_MM = '''
 SELECT *
   FROM ensembl_genes e
  WHERE e.chromosome = :chromosome
@@ -180,7 +183,7 @@ SELECT *
  ORDER BY cast(replace(replace(replace(e.chromosome, 'X', '50'), 'Y', '51'), 'MT', 51) AS int), e.start_position, e.end_position
 '''
 
-SQL_LOCATION_HS = '''
+SQL_REGION_HS = '''
 SELECT *
   FROM ensembl_genes e
  WHERE e.chromosome = :chromosome
@@ -192,40 +195,40 @@ SELECT *
 
 
 QUERIES = {}
-QUERIES['SQL_TERM_EXACT']=SQL_TERM_EXACT
-QUERIES['SQL_TERM_EXACT_MM']=SQL_TERM_EXACT_MM
-QUERIES['SQL_TERM_EXACT_HS']=SQL_TERM_EXACT_HS
-QUERIES['SQL_TERM_LIKE']=SQL_TERM_LIKE
-QUERIES['SQL_TERM_LIKE_MM']=SQL_TERM_LIKE_MM
-QUERIES['SQL_TERM_LIKE_HS']=SQL_TERM_LIKE_HS
-QUERIES['SQL_ID']=SQL_ID
-QUERIES['SQL_ID_MM']=SQL_ID_MM
-QUERIES['SQL_ID_HS']=SQL_ID_HS
-QUERIES['SQL_LOCATION']=SQL_LOCATION
-QUERIES['SQL_LOCATION_MM']=SQL_LOCATION_MM
-QUERIES['SQL_LOCATION_HS']=SQL_LOCATION_HS
+QUERIES['SQL_TERM_EXACT'] = SQL_TERM_EXACT
+QUERIES['SQL_TERM_EXACT_MM'] = SQL_TERM_EXACT_MM
+QUERIES['SQL_TERM_EXACT_HS'] = SQL_TERM_EXACT_HS
+QUERIES['SQL_TERM_LIKE'] = SQL_TERM_LIKE
+QUERIES['SQL_TERM_LIKE_MM'] = SQL_TERM_LIKE_MM
+QUERIES['SQL_TERM_LIKE_HS'] = SQL_TERM_LIKE_HS
+QUERIES['SQL_ID'] = SQL_ID
+QUERIES['SQL_ID_MM'] = SQL_ID_MM
+QUERIES['SQL_ID_HS'] = SQL_ID_HS
+QUERIES['SQL_REGION'] = SQL_REGION
+QUERIES['SQL_REGION_MM'] = SQL_REGION_MM
+QUERIES['SQL_REGION_HS'] = SQL_REGION_HS
 
 
 class Status:
     pass
 
 
-class Location:
-    """ Encapsulates a genomic location
-
+class Region:
+    """
+    Encapsulates a genomic region
     """
     def __init__(self):
         self.chromosome = ''
         self.start_position = None
         self.end_position = None
+
     def __str__(self):
         return str(self.chromosome) + ':' + str(self.start_position) + '-' + str(self.end_position)
+
     def __repr__(self):
-        location = {}
-        location['chromosome'] = self.chromosome
-        location['start_position'] = self.start_position
-        location['end_position'] = self.end_position
-        return location
+        return {'chromosome': self.chromosome,
+                'start_position': self.start_position,
+                'end_position': self.end_position}
 
 
 class Query:
@@ -237,16 +240,19 @@ class Query:
         self.species_id = species_id
         self.exact = exact
         self.verbose = verbose
-        self._location = None
+        self._region = None
         self.query = None
 
     def __str__(self):
         return 'QUERY: \n' + str(self.query) + '\nTERM: ' + str(self.term) + '\nSPECIES_ID: ' + str(self.species_id) + \
-               '\nEXACT: ' + str(self.exact) + '\nVERBOSE: ' + str(self.verbose) + '\nLOCATION: ' + str(self._location) + \
+               '\nEXACT: ' + str(self.exact) + '\nVERBOSE: ' + str(self.verbose) + '\nLOCATION: ' + str(self._region) + \
                '\nPARAMS: ' + str(self.get_params())
+
     def get_params(self):
-        if self._location:
-            return {'chromosome':self._location.chromosome, 'start_position':self._location.start_position, 'end_position':self._location.end_position}
+        if self._region:
+            return {'chromosome': self._region.chromosome,
+                    'start_position': self._region.start_position,
+                    'end_position': self._region.end_position}
         return {'term': self.term}
 
 
@@ -255,7 +261,7 @@ class Match:
 
     """
     def __init__(self, ensembl_gene_id=None, external_id=None, symbol=None, name=None, description=None,
-                 synonyms=None, species_id= None, chromosome=None, position_start=None, position_end=None, strand=None,
+                 synonyms=None, species_id=None, chromosome=None, position_start=None, position_end=None, strand=None,
                  match_reason=None, match_value=None):
         self.ensembl_gene_id = ensembl_gene_id
         self.external_id = external_id
@@ -337,32 +343,32 @@ def get_status(error = False, message=None):
 
 
 def get_multiplier(factor):
-    if factor.lower() in ['g', 'gb', 'gbp']:
-        return 1000000000
-    if factor.lower() in ['m', 'mb', 'mbp']:
+    if factor.lower() == 'mb':
+        return 10000000
+    elif factor.lower() == 'm':
         return 1000000
-    elif factor.lower() in ['k', 'kb', 'kbp']:
+    elif factor.lower() == 'k':
         return 1000
 
     return 1
 
 
-def str_to_location(location):
+def str_to_region(location):
     status = get_status()
     if not location:
         return None, get_status(True, 'No location')
 
-    valid_location = str(location).strip()
+    valid_location = location.strip()
 
     if len(valid_location) <= 0:
         return None, get_status(True, 'Empty location')
 
-    match = REGEX_LOCATION.match(valid_location)
+    match = REGEX_REGION.match(valid_location)
 
     loc = None
 
     if match:
-        loc = Location()
+        loc = Region()
         loc.chromosome = match.group(2)
         loc.start_position = match.group(4)
         loc.end_position = match.group(7)
@@ -375,25 +381,25 @@ def str_to_location(location):
             loc.end_position = long(loc.end_position)
 
         if multiplier_one:
-            loc.start_position = loc.start_position * get_multiplier(multiplier_one)
+            loc.start_position *= get_multiplier(multiplier_one)
 
         if multiplier_two:
-            loc.end_position = loc.end_position * get_multiplier(multiplier_two)
+            loc.end_position *= get_multiplier(multiplier_two)
     else:
         status = get_status(True, 'Invalid location string')
 
     return loc, status
 
 
-def convert(input):
-    if isinstance(input, dict):
-        return {convert(key): convert(value) for key, value in input.iteritems()}
-    elif isinstance(input, list):
-        return [convert(element) for element in input]
-    elif isinstance(input, unicode):
-        return input.encode('utf-8')
+def convert(input_value):
+    if isinstance(input_value, dict):
+        return {convert(key): convert(value) for key, value in input_value.iteritems()}
+    elif isinstance(input_value, list):
+        return [convert(element) for element in input_value]
+    elif isinstance(input_value, unicode):
+        return input_value.encode('utf-8')
     else:
-        return input
+        return input_value
 
 
 def validate_ensembl_id(ensembl_id):
@@ -440,10 +446,11 @@ def _get_query(term, species_id=None, exact=True, verbose=False):
     if not term:
         return None, get_status(True, 'No term')
 
-    valid_term = str(term).strip()
+    valid_term = term.strip()
 
     if len(valid_term) <= 0:
         return None, get_status(True, 'Empty term')
+
 
     query = Query(term, species_id, exact, verbose)
 
@@ -452,29 +459,27 @@ def _get_query(term, species_id=None, exact=True, verbose=False):
     else:
         species_id = ''
 
-    if REGEX_LOCATION.match(valid_term):
-        location, status = str_to_location(valid_term)
-        if not status.error:
-            query.query = QUERIES['SQL_LOCATION' + species_id]
-            query._location = location
-        else:
-            return None, status
-    elif REGEX_ENSEMBL_MOUSE_ID.match(valid_term):
+    if REGEX_ENSEMBL_MOUSE_ID.match(valid_term):
         query.query = QUERIES['SQL_ID' + species_id]
     elif REGEX_ENSEMBL_HUMAN_ID.match(valid_term):
         query.query = QUERIES['SQL_ID' + species_id]
     elif REGEX_MGI_ID.match(valid_term):
         query.query = QUERIES['SQL_ID' + species_id]
+    elif REGEX_REGION.match(valid_term):
+        region, status = str_to_region(term)
+        if not status.error:
+            query.query = QUERIES['SQL_REGION' + species_id]
+            query._region = region
+        else:
+            return None, status
     else:
         if exact:
             query.query = QUERIES['SQL_TERM_EXACT' + species_id]
         else:
             query.query = QUERIES['SQL_TERM_LIKE' + species_id]
 
-            if valid_term != '%':
-                valid_term = '%' + valid_term
-            if valid_term[-1] != '%':
-                valid_term = valid_term + '%'
+            if valid_term[-1] != '*':
+                valid_term = valid_term + '*'
 
             query.term = valid_term
 
@@ -490,7 +495,9 @@ def _query(query):
     matches = []
 
     try:
-        cursor = get_db().cursor()
+        conn = connect_to_database()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
 
         for row in cursor.execute(query.query, query.get_params()):
             match = Match()
@@ -512,8 +519,8 @@ def _query(query):
             match.position_end = row['end_position']
             match.strand = row['strand']
 
-            if query._location:
-                match.match_reason = 'Location'
+            if query._region:
+                match.match_reason = 'Region'
                 match.match_value = str(match.chromosome) + ':' + str(match.position_start) + '-' + str(match.position_end)
             else:
                 row_match_description = row['match_description']
@@ -521,7 +528,6 @@ def _query(query):
                     desc = row_match_description.split('||')
                 match.match_reason = desc[1]
                 match.match_value = desc[2]
-
 
             matches.append(match)
 
@@ -551,10 +557,6 @@ def search(term, species_id=None, exact=True, verbose=False):
 
 
 
-if __name__ == '__main__':
-    #results, status = search("CHR1:1MB-1000MB", 'Mm', False, True)
-    loc,status=str_to_location("CHR1:10MB-11MB")
-    print loc
 
 
 

@@ -1,8 +1,10 @@
 import h5py
 import rpy2.robjects as ro
 import numpy as np
-import os
 
+import argparse
+import os
+import sys
 
 #
 # datatypes
@@ -125,19 +127,48 @@ def create_factors(h5_root):
 
 
 if __name__ == '__main__':
-    datasets = [('adipose', 'Adipose'),
-                ('gastroc', 'Gastrocnemius'),
-                ('hypo', 'Hypothalamus'),
-                ('islet', 'Islet'),
-                ('kidney', 'Kidney'),
-                ('liver', 'Liver')]
 
-    h5_file_name = 'data/btbr_test.h5'
+    parser = argparse.ArgumentParser(description='Convert txt files to hdf5')
 
-    try:
-        os.remove(h5_file_name)
-    except:
-        pass
+    parser.add_argument('-o', '--out', help='Output HDF file', required=True)
+    parser.add_argument('-d', '--dataset', help='ID of the dataset', required=True)
+    parser.add_argument('-f', '--features', help='features file, think genes', required=True)
+    parser.add_argument('-l', '--lod', help='lod score file, features (rows) by markers (columns)', required=True)
+    parser.add_argument('-m', '--markers', help='markers file, think snps', required=True)
+
+    parser.add_argument('--dfA', help='Degress of freedom autosomes', required=True)
+    parser.add_argument('--dfX', help='Degrees of freedom X', required=True)
+
+    parser.add_argument('--datasetname', help='Name of the dataset, defaults to value of -d', required=False)
+
+    # effect plot
+    parser.add_argument('--coef', help='coef files, 1 per strain, features (rows) by markers (columns)', nargs='*', required=False)
+    parser.add_argument('--strains', help='strains file', required=False)
+
+    # factorial viewer stuff
+    parser.add_argument('--samples', help='samples file', required=False)
+    parser.add_argument('--factors', help='factors file, think diet, tissue, etc', required=False)
+    parser.add_argument('--phenotypes', help='phenotypes file, samples (rows) by factors (columns)', required=False)
+    parser.add_argument('--genotypes', help='genotypes file, markers (rows) by samples (columns)', required=False)
+    parser.add_argument('--expression', help='expression data file, feature (rows) by samples (columns)', required=False)
+
+    args = vars(parser.parse_args())
+
+    print str(args)
+
+    # check the arguments
+
+
+
+
+
+
+
+
+
+
+    sys.exit()
+    '''
 
     h5_file = h5py.File(h5_file_name, "w")
 
@@ -154,4 +185,11 @@ if __name__ == '__main__':
 
     h5_file.flush()
     h5_file.close()
+
+
+
+    '''
+
+
+
 

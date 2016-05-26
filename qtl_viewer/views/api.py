@@ -150,10 +150,14 @@ def ws_search():
     valid_term = term.strip()
     result = None
 
+
     if len(valid_term) == 0:
         status = search_utils.get_status(True, 'No term specified')
     else:
         result, status = search_utils.search(term=valid_term, exact=exact, species_id=species, verbose=verbose)
+
+    print str(status.error)
+    print str(status.message)
 
     response = make_response(render_template('api/searchresults.json', callbackFunction=callbackFunction, result=result, status=status))
     response.headers['Content-Type'] = 'application/json'

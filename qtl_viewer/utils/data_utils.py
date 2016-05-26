@@ -391,7 +391,14 @@ def get_factors_phenotypes(dataset, marker_id=None):
 
     try:
         if 'genotypes/genotypes' in root and marker_id is not None:
+            print 'getting marker_id={}'.format(marker_id)
+            print str(MARKERS[dataset])
             idx = MARKERS[dataset][marker_id]
+
+
+            print 'idx={}'.format(idx)
+            print factors
+
             factors['genotype']['values'] = list(root['genotypes/genotypes'][idx])
     except KeyError, ke:
         logging.error(ke.message)
@@ -521,7 +528,10 @@ def get_effect_data(dataset, identifier):
 
 
 def pvalue2lod(pvalue, df):
-    lod = stats.chi2.ppf(1-pvalue, df) / 2 / math.log(10)
+    try:
+        lod = stats.chi2.ppf(1-pvalue, df) / 2 / math.log(10)
+    except Exception, e:
+        print str(e)
     return lod
 
 
@@ -548,6 +558,27 @@ def pvalue2lodtable(dataset, x_min, x_max):
         vals['dfX'][x] = pvalue2lod(p, dfX)
 
     return vals
+
+
+def print_obj(name, obj):
+    print name, str(obj)
+    for key, val in obj.attrs.iteritems():
+        print "    %s: %s" % (key, val)
+
+
+def walk():
+    get_hdf5().visititems(print_obj)
+
+
+def self_check():
+    datasets = get_datasets()
+
+    for d in datasets:
+        root = get_dataset(d)
+
+
+
+
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:

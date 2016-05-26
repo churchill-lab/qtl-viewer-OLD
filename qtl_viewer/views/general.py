@@ -32,24 +32,34 @@ def index():
     dataset = request.values.get('dataset', g.CONF.DEFAULT_DATASET)
     all_datasets = data_utils.get_datasets()
 
-    render_effect_plot = not data_utils.has_samples(dataset)
+    render_effect_plot = g.CONF.WWW_EFFECT_SHOW
+    render_fact_plot = g.CONF.WWW_FACT_SHOW
+
     if render_effect_plot:
         strains = data_utils.get_strains(dataset)
-        factors = None
-    else:
-        strains = None
+
+    if render_fact_plot:
         factors = data_utils.get_factors_web(dataset)
 
+    factor_order = factors.keys()
+
+    if g.CONF.WWW_FACT_ORDER:
+        factor_order = g.CONF.WWW_FACT_ORDER
+
     pvalueToLodTable = {}
+
     if not g.CONF.WWW_MATRIX_LOD:
         for uk,v in all_datasets.iteritems():
-
             k = str(uk)
             pvalueToLodTable[k] = data_utils.pvalue2lodtable(k,
                                                              g.CONF.WWW_LOD_THRESHOLD_SLIDER_MIN,
                                                              g.CONF.WWW_LOD_THRESHOLD_SLIDER_MAX)
 
+
     return render_template('general/index.html', search_term=search_term, lod_threshold=lod_threshold,
-                           all_datasets=all_datasets, dataset=dataset, strains=strains,
-                           render_effect_plot=render_effect_plot, factors=factors,
-                           pvalueToLodTable=pvalueToLodTable)
+                           species_id=g.CONF.SPECIES, all_datasets=all_datasets, dataset=dataset,
+                           strains=strains, render_effect_plot=render_effect_plot,
+                           render_fact_plot=render_fact_plot, factors=factors,
+                           pvalueToLodTable=pvalueToLodTable,
+                           factor_order=factor_order,
+                           use_group_id=g.CONF.DATA_USE_GROUP_ID)

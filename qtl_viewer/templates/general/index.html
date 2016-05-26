@@ -194,9 +194,9 @@
         </div>
     </div>
     <!-- END SECOND ROW //-->
+    {% if render_effect_plot %}
     <div class="row">
         <div class="col-sm-12 margin-bottom-30">
-            {% if render_effect_plot %}
             <!-- START EFFECT PLOT //-->
             <div class="portlet">
                 <div class="portlet-title">
@@ -220,7 +220,12 @@
                 </div>
             </div>
             <!-- END EFFECT PLOT //-->
-            {% else %}
+        </div>
+    </div>
+    {% endif %}
+    {% if render_fact_plot %}
+    <div class="row">
+        <div class="col-sm-12 margin-bottom-30">
             <!-- RENDER FACT VIEWER //-->
             <div class="portlet">
                 <div class="portlet-title">
@@ -260,7 +265,12 @@
                             <div id="factor-view-select-wrapper">
                                 <select id="factor-view-select" multiple="multiple">
                                     {% for k,v in factors.iteritems() %}
-                                    <option value="{{ k }}" selected order="{{ loop.index }}">{{ v['name'] }}</option>
+                                        <option value="{{ k }}"
+                                        {% if k in factor_order %}
+                                    selected
+                                                {% endif %}
+                                                order="{{ loop.index }}">{{ v['name'] }}</option>
+
                                     {% endfor %}
                                 </select>
                             </div>
@@ -456,7 +466,9 @@ function downloadEffectData(gene) {
 
 }
 
-{% else %}
+{% endif %}
+
+{% if render_fact_plot %}
 
 function downloadFactData(gene, factors, marker) {
     if (gene == null) {
@@ -486,11 +498,6 @@ function downloadFactData(gene, factors, marker) {
             console.log('Successfully downloaded ' + json_url);
 
             plotFactExpViewData(jsonData);
-
-
-
-
-
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
             console.error("Factorial download error :" + XMLHttpRequest.responseText);
@@ -579,6 +586,7 @@ function plotFactExpViewData(jsonData) {
             }
         });
     });
+
 }
 
 
@@ -684,7 +692,12 @@ function findGene(do_plot) {
     _PLOTS.matrix.found = [];
     searchResults = {};
 
-    var url = "{{request.URL_BASE}}/api/search?exact=False&species=Mm&term=" + searchTerm;
+    {% if species_id %}
+    var url = "{{request.URL_BASE}}/api/search?exact=False&species={{species_id}}&term=" + searchTerm;
+    {% else %}
+    var url = "{{request.URL_BASE}}/api/search?exact=False&term=" + searchTerm;
+    {% endif %}
+
     console.log(url);
     var jqxhr = $.getJSON(url)
             .done(function( data, textStatus, jqXHR ) {
@@ -715,8 +728,32 @@ function findGene(do_plot) {
                         var row = '<tr>';
                         searchResults[match.ensembl_id] = match;
 
-
                         //console.log('delem[_settings.MATRIX.feature_id]=', delem[_settings.MATRIX.feature_id]);
+
+                        {% if use_group_id %}
+
+                        if (match.ensembl_id in _PLOTS.matrix.group_ids) {
+                            // we know a point exists, find it
+                            console.log('element exists');
+                            var delem = _PLOTS.matrix.ids[_PLOTS.matrix.group_ids[match.ensembl_id]];
+                            console.log('delem=',delem);
+                            row += '<td><a href="#" id="plotMe" feature_id="' + delem[_settings.MATRIX.feature_group_id] + '">' + delem[_settings.MATRIX.feature_group_id] + '</a> <span id="matchInfo" feature_id="' + delem[_settings.MATRIX.feature_group_id] + '" class="glyphicon glyphicon-info-sign"></span></td>';
+                            row += ('<td>' + delem[_settings.MATRIX.feature_name] + '</td>');
+                            row += ('<td>' + Number(delem[_settings.MATRIX.lod_score]).toFixed(4) + '</td>');
+                            //row += ('<td>' + delem[_settings.MATRIX.feature_chrom] + ":" + formatMbp(delem[_settings.MATRIX.feature_location]) + '</td></tr>');
+                            row += ('<td>' + match.chromosome + ":" + formatMbp(match.position_start/1000000) + "-" + formatMbp(match.position_end/1000000) + '</td>');
+
+                            _PLOTS.matrix.found.push(delem.feature_id);
+                            _PLOTS.matrix.filteredData.push(delem);
+                        } else {
+                                console.log('element does not exist');
+                                row += '<td>' + match.ensembl_id + ' <span id="matchInfo" feature_id="' + match.ensembl_id + '" class="glyphicon glyphicon-info-sign"></span></td>';
+                                row += ('<td>' + match.symbol + '</td>');
+                                row += ('<td></td>');
+                                row += ('<td>' + match.chromosome + ":" + formatMbp(match.position_start/1000000) + "-" + formatMbp(match.position_end/1000000) + '</td>');
+                                row += ('</tr>');
+                        }
+                        {% else %}
 
                         if (match.ensembl_id in _PLOTS.matrix.ids) {
                             // we know a point exists, find it
@@ -739,6 +776,8 @@ function findGene(do_plot) {
                                 row += ('<td>' + match.chromosome + ":" + formatMbp(match.position_start/1000000) + "-" + formatMbp(match.position_end/1000000) + '</td>');
                                 row += ('</tr>');
                         }
+
+                        {% endif %}
                         row += '</tr>';
                         tbl += row;
 
@@ -767,7 +806,12 @@ function findGene(do_plot) {
                         e.preventDefault();
                         console.log("Search Table click, this=", $(this))
                         console.log("Search Table click, e=", e)
+
+                        {% if use_group_id %}
+                        var feature_info = _PLOTS.matrix.ids[_PLOTS.matrix.group_ids[$(this).attr('feature_id')]];
+                        {% else %}
                         var feature_info = _PLOTS.matrix.ids[$(this).attr('feature_id')];
+                        {% endif %}
                         formatFeatureInformation(feature_info);
                         downloadLodData(feature_info[_settings.MATRIX.feature_id]);
                         return false;
@@ -785,8 +829,8 @@ function findGene(do_plot) {
                                 container: 'body',
                                 template:'<div class="popover container my-custom-class" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>',
                                 content: function () {
-                                    console.log(that);
-                                    console.log(that[0].getAttribute("feature_id"));
+                                    console.log('that=',that);
+                                    console.log('that[0].getAttribute("feature_id")=', that[0].getAttribute("feature_id"));
                                     var d = searchResults[that[0].getAttribute("feature_id")];
                                     console.log(d);
                                     var h = '<table class="table table-condensed">';
@@ -1213,6 +1257,7 @@ function drawMatrix(initialize) {
     //remove all the circles
     plot.chartBody.selectAll("circle").remove();
     plot.ids = {};
+    plot.group_ids = {};
 
     _G.threshold_value = _G.lod;
     if (_G.matrixLod) {
@@ -1231,6 +1276,12 @@ function drawMatrix(initialize) {
 
         plot.ids[d[_settings.MATRIX.feature_id]] = d;
 
+        {%- if use_group_id %}
+        // map the feature group id to the feature id
+        plot.group_ids[d[_settings.MATRIX.feature_group_id]] = d[_settings.MATRIX.feature_id];
+        {%- endif %}
+
+
         if (_G.matrixLod) {
             return d[_settings.MATRIX.lod_score] > _G.lod;
         } else {
@@ -1245,10 +1296,6 @@ function drawMatrix(initialize) {
 
     console.log('plot.data.length=',plot.data.length);
     console.log('plot.data_displayed.length=',plot.data_displayed.length);
-
-
-
-
 
 
     plot.chartBodyCircles = plot.chartBody.selectAll("circle")
@@ -1317,12 +1364,16 @@ function drawMatrix(initialize) {
                 var d = this.__data__;
                 var h = "";
                 h += '<table class="table table-condensed">';
-                h += '<tr><td><strong>Gene Symbol</strong></td><td>' + d[_settings.MATRIX.feature_name] + '</td></tr>'
-                h += '<tr><td><strong>Gene ID</strong></td><td>' + d[_settings.MATRIX.feature_id] + '</td></tr>'
-                h += '<tr><td><strong>LOD Score</strong></td><td>' + Number(d[_settings.MATRIX.lod_score]).toFixed(2) + '</td></tr>'
-                h += '<tr><td><strong>Marker Position</strong></td><td>' + d[_settings.MATRIX.marker_chrom] + ":" + d[_settings.MATRIX.marker_location] + '</td></tr>'
-                h += '<tr><td><strong>Gene Position</strong></td><td>' + d[_settings.MATRIX.feature_chrom] + ":" + d[_settings.MATRIX.feature_location] + '</td></tr>'
+                h += '<tr><td><strong>{{g.CONF.MATRIX_FEATURE_ID_TEXT}}</strong></td><td>' + d[_settings.MATRIX.feature_id] + '</td></tr>'
+                {% if use_group_id %}
+                h += '<tr><td><strong>{{g.CONF.MATRIX_FEATURE_GROUP_ID_TEXT}}</strong></td><td>' + d[_settings.MATRIX.feature_group_id] + '</td></tr>'
+                {% endif %}
+                h += '<tr><td><strong>{{g.CONF.MATRIX_FEATURE_NAME_TEXT}}</strong></td><td>' + d[_settings.MATRIX.feature_name] + '</td></tr>'
+                h += '<tr><td><strong>{{g.CONF.MATRIX_FEATURE_LOCATION_TEXT}}</strong></td><td>' + d[_settings.MATRIX.feature_chrom] + ":" + d[_settings.MATRIX.feature_location] + '</td></tr>'
+                h += '<tr><td><strong>{{g.CONF.MATRIX_MARKER_LOCATION_TEXT}}</strong></td><td>' + d[_settings.MATRIX.marker_chrom] + ":" + d[_settings.MATRIX.marker_location] + '</td></tr>'
+                h += '<tr><td><strong>{{g.CONF.MATRIX_SCORE_TEXT}}</strong></td><td>' + Number(d[_settings.MATRIX.lod_score]).toFixed(2) + '</td></tr>'
                 h += '</table>';
+
                 return h;
             }
         });
@@ -1352,6 +1403,12 @@ function formatFeatureInformation(feature_info) {
     html += "<strong>";
     html += feature_info[_settings.MATRIX.feature_id];
     html += "</strong>, ";
+
+    {% if use_group_id %}
+    html += feature_info[_settings.MATRIX.feature_group_id];
+    html += ", ";
+    {% endif %}
+
     html += feature_info[_settings.MATRIX.feature_name];
     html += ", located on chromosome ";
     html += feature_info[_settings.MATRIX.feature_chrom];
@@ -1359,10 +1416,19 @@ function formatFeatureInformation(feature_info) {
     html += formatMbp(feature_info[_settings.MATRIX.feature_location]);
     html += " Mb ";
     html += " <a target='_newwin' href='http://www.ensembl.org/Mus_musculus/Gene/Summary?db=core;g=";
+    {% if use_group_id %}
+    html += feature_info[_settings.MATRIX.feature_group_id];
+    {% else %}
     html += feature_info[_settings.MATRIX.feature_id];
+    {% endif %}
+
     html += "'> Ensembl <i class='fa fa-external-link'></i></a> ";
     html += " <a target='_newwin' href='http://www.informatics.jax.org/marker/";
+    {% if use_group_id %}
+    html += feature_info[_settings.MATRIX.feature_group_id];
+    {% else %}
     html += feature_info[_settings.MATRIX.feature_id];
+    {% endif %}
     html += "'>MGI <i class='fa fa-external-link'></i></a> ";
     $("#featureInformation").html(html);
 
@@ -1448,7 +1514,8 @@ function downloadLodData(feature) {
             {% if render_effect_plot %}
             console.log('DOWNLOADING EFFECT DATA');
             downloadEffectData(feature);
-            {% else %}
+            {% endif %}
+            {% if render_fact_plot %}
             console.log('DOWNLOADING FACT DATA');
             downloadFactData(feature, getFactorOrder(), _G.currentMarker);
             {% endif %}
@@ -1710,8 +1777,6 @@ function drawLOD(initialize) {
                 {% if render_effect_plot %}
                 _G.currentChrom = c;
                 drawEffect(false);
-                {% else %}
-                console.log('FACT VIEWER');
                 {% endif %}
             });
 
@@ -1798,7 +1863,8 @@ function drawLOD(initialize) {
                 {% if render_effect_plot %}
                     _G.currentChrom = d['chrom'];
                     drawEffect(false);
-                {% else %}
+                {% endif %}
+                {% if render_effect_plot %}
                     _G.currentMarker = d['marker_id'];
                     downloadFactData(_G.currentFeature, getFactorOrder(), _G.currentMarker);
                     console.log('PLOT FACT');
@@ -1819,7 +1885,7 @@ function drawLOD(initialize) {
                 var h = "";
                 h += '<table class="table table-condensed">';
                 h += '<tr><td><strong>ID</strong></td><td>' + d['marker_id'] + '</td></tr>'
-                h += '<tr><td><strong>LOD</strong></td><td>' + Number(d['lod']).toFixed(4)  + '</td></tr>'
+                h += '<tr><td><strong>Value</strong></td><td>' + Number(d['lod']).toFixed(4)  + '</td></tr>'
                 h += '</table>';
                 return h;
             }
@@ -1999,11 +2065,6 @@ function drawEffect(initialize) {
         .ease("linear")
         .attr("stroke-dashoffset", 0);
 }
-
-{% endif %}
-
-
-{% if render_effect_plot %}
 
 function initEffect() {
     var graphic = $('#plotEffect');
@@ -2438,7 +2499,7 @@ $().ready(function () {
         $("#currentLodScore").html(_G.lod);
     });
 
-    {% if not render_effect_plot %}
+    {% if render_fact_plot %}
         _PLOTS.fact.orderCount = getFactorOrder().length;
 
         $('#factor-view-select').multiselect({
@@ -2520,7 +2581,9 @@ $().ready(function () {
         return false;
     });
 
-    {%- else -%}
+    {% endif %}
+
+    {%if render_effect_plot -%}
 
     $('#downloadEffectPlot').popover({
         trigger: 'manual',
