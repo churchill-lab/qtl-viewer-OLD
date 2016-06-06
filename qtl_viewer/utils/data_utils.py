@@ -180,9 +180,9 @@ def generate_matrix_file(dataset, output_file=None, delimiter='\t'):
             out = open(output_file, 'w')
 
         root = h5[dataset]
-        lods = root['lod']['lod']
-        features = root['features']
-        markers = root['markers']
+        lods = root['lod']['lod'][:]
+        features = root['features'][:]
+        markers = root['markers'][:]
         has_pvalues = has_pval(dataset)
         if has_pvalues:
             pvals = root['lod']['pval']
@@ -197,10 +197,29 @@ def generate_matrix_file(dataset, output_file=None, delimiter='\t'):
         out.write(header)
         out.write('\n')
 
+        dfA = root.attrs['dfA']
+        dfX = root.attrs['dfX']
+
+        print 'Number of LOD scores {}'.format(lods.shape)
+
+        df = []
+        for m in markers:
+            if m[1] == 'X':
+                df.append(dfX)
+            else:
+                df.append(dfA)
+
         for i, rec in enumerate(lods):
-            marker_idx = rec.argmax()
+
+            new_markers = []
+            for j, lod in enumerate(rec):
+                new_markers.append(lod2pvalue(lod, df[j]))
+
+            new_markers = np.array(new_markers)
+            marker_idx = new_markers.argmin()
             m = markers[marker_idx]
             f = features[i]
+
             p = ''
             if has_pvalues:
                 p = pvals[i][marker_idx]
@@ -235,7 +254,19 @@ def generate_matrix_files():
         except:
             pass
 
+        #import cProfile, pstats, StringIO
+        #pr = cProfile.Profile()
+        #pr.enable()
+
         generate_matrix_file(dataset, filename, '\t')
+
+
+        #pr.disable()
+        #s = StringIO.StringIO()
+        #sortby = 'cumulative'
+        #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        #ps.print_stats()
+        #print s.getvalue()
 
 
 def get_strains(dataset):
@@ -525,6 +556,14 @@ def get_effect_data(dataset, identifier):
     # lines is now list of (marker, founder val, founder val, ..., founder val * number of founders) * number markers
 
     return '\n'.join(lines)
+
+
+def lod2pvalue(lod, df):
+    try:
+        pvalue = 1 - stats.chi2.cdf(2 * math.log(10) * lod, df)
+    except Exception, e:
+        print str(e)
+    return pvalue
 
 
 def pvalue2lod(pvalue, df):
