@@ -139,7 +139,7 @@ if __name__ == '__main__':
     except:
         pass
 
-    h5_file = h5py.File(h5_file_name, "w")
+    h5_file = h5py.File(h5_file_name, "r")
 
     for d in datasets:
         print d

@@ -14,6 +14,7 @@ Item = namedtuple('Item', ['path', 'datatype', 'shape'])
 items = OrderedDict()
 
 def check_type(path, field, dtype, num=True):
+    #print dtype[field].kind
     if num:
         t = np.typecodes['AllFloat'] + np.typecodes['AllInteger']
         if field in dtype.names and (dtype[field].kind in t):
@@ -21,7 +22,8 @@ def check_type(path, field, dtype, num=True):
         else:
             print 'ERROR\t{} found field {} as NON NUMERIC'.format(path, field)
     else:
-        t = 'aSc'
+        # TODO: O is python object, not really a string
+        t = 'OaSc'
         if field in dtype.names and (dtype[field].kind in t):
             print 'SUCCESS\t{} found field {} as STRING'.format(path, field)
         else:
@@ -36,13 +38,18 @@ def create_item(name, obj):
     #for key, val in obj.attrs.iteritems():
     #    print "    %s: %s" % (key, val)
 
-#for i in items:
-#    print i, items[i]
 
 
-def main():
+def main(filename, dump=False):
+    data_utils.HDF5_FILENAME = os.path.abspath(filename)
+    data_utils.init()
+
     root = data_utils.HDF5
     root.visititems(create_item)
+
+    #global items
+    #for i in items:
+    #    print i, items[i]
 
     print 'Analysis of: {}'.format(root.filename)
 
@@ -109,6 +116,9 @@ def main():
                         print 'SUCCESS\t{} has {:,} items'.format(path, shape[0])
                         num_features = shape[0]
 
+                        if dump:
+                            np.savetxt("{}_features.txt".format(dataset_name), features.value, fmt="%s", delimiter="\t")
+
             else:
                 print 'ERROR\t{} not a Dataset'.format(path)
 
@@ -154,6 +164,9 @@ def main():
                         print 'SUCCESS\t{} has {:,} items'.format(path, shape[0])
                         num_markers = shape[0]
 
+                        if dump:
+                            np.savetxt("{}_markers.txt".format(dataset_name), markers.value, fmt="%s", delimiter="\t")
+
             else:
                 print 'ERROR\t{} not a Dataset'.format(path)
 
@@ -198,6 +211,9 @@ def main():
                         print 'SUCCESS\t{} #columns ({:,}) equals #markers ({:,})'.format(path, shape[1], num_markers)
                     else:
                         print 'ERROR\t{} #columns ({:,}) does not equal #markers ({:,})'.format(path, shape[1], num_markers)
+
+                    if dump and shape[0] == num_features and shape[1] == num_markers:
+                        np.savetxt("{}_lod.txt".format(dataset_name), lod.value, fmt="%f", delimiter="\t")
 
             else:
                 print 'ERROR\t{} not a Dataset'.format(path)
@@ -261,6 +277,9 @@ def main():
                             print 'SUCCESS\t{} has {:,} items'.format(path, shape[0])
                             num_strains = shape[0]
 
+                            if dump:
+                                np.savetxt("{}_strains.txt".format(dataset_name), strains.value, fmt=["%s","%s","%s"], delimiter="\t")
+
                 else:
                     print 'ERROR\t{} not a Dataset'.format(path)
 
@@ -294,6 +313,12 @@ def main():
                             print 'SUCCESS\t{} 3rd dimension ({:,}) equals #markers ({:,})'.format(path, shape[2], num_markers)
                         else:
                             print 'ERROR\t{} 3rd dimension ({:,}) does not equal #markers ({:,})'.format(path, shape[2], num_markers)
+
+                    if dump and shape[0] == num_features and shape[1] == num_strains and shape[2] == num_markers:
+                        data = np.rollaxis(coef.value, 1)
+                        for x in xrange(num_strains):
+                            strain_data = data[x,]
+                            np.savetxt("{}_coef_{}.txt".format(dataset_name, strains[x][0]), strain_data, fmt="%s", delimiter="\t")
 
                 else:
                     print 'ERROR\t{} not a Dataset'.format(path)
@@ -341,6 +366,9 @@ def main():
                         print 'SUCCESS\t{} has {:,} items'.format(path, shape[0])
                         num_samples = shape[0]
 
+                        if dump:
+                            np.savetxt("{}_samples.txt".format(dataset_name), samples.value, fmt=["%s","%s","%s"], delimiter="\t")
+
             else:
                 print 'ERROR\t{} not a Dataset'.format(path)
 
@@ -386,6 +414,9 @@ def main():
                         print 'SUCCESS\t{} #columns ({:,}) equals #samples ({:,})'.format(path, shape[1], num_samples)
                     else:
                         print 'ERROR\t{} #columns ({:,}) does not equal #samples ({:,})'.format(path, shape[1], num_samples)
+
+                    if dump and shape[0] == num_features and shape[1] == num_samples:
+                        np.savetxt("{}_expression.txt".format(dataset_name), expression.value, fmt="%f", delimiter="\t")
 
             else:
                 print 'ERROR\t{} not a Dataset'.format(path)
@@ -433,13 +464,14 @@ def main():
                     else:
                         print 'ERROR\t{} #columns ({:,}) does not equal #samples ({:,})'.format(path, shape[1], num_samples)
 
+                    if dump and shape[0] == num_markers and shape[1] == num_samples:
+                        np.savetxt("{}_genotypes.txt".format(dataset_name), genotypes.value, fmt="%s", delimiter="\t")
+
             else:
                 print 'ERROR\t{} not a Dataset'.format(path)
 
         else:
             print 'WARNING\t{} not found'.format(path)
-
-
 
         # phenotypes
         num_factors = 0
@@ -497,6 +529,8 @@ def main():
                             print 'SUCCESS\t{} has {:,} items'.format(path, shape[0])
                             num_factors = shape[0]
 
+                        if dump:
+                            np.savetxt("{}_factors.txt".format(dataset_name), factors.value, fmt=["%s","%s","%s"], delimiter="\t")
                 else:
                     print 'ERROR\t{} not a Dataset'.format(path)
 
@@ -526,7 +560,8 @@ def main():
                         else:
                             print 'ERROR\t{} #columns ({:,}) does not equal #factors ({:,})'.format(path, shape[1], num_factors)
 
-
+                    if dump and shape[0] == num_samples and shape[1] == num_factors:
+                        np.savetxt("{}_phenotypes.txt".format(dataset_name), phenotypes.value, fmt="%s", delimiter="\t")
                 else:
                     print 'ERROR\t{} not a Dataset'.format(path)
 
@@ -535,6 +570,4 @@ def main():
 
 
 if __name__ == '__main__':
-    data_utils.HDF5_FILENAME = os.path.abspath(sys.argv[1])
-    data_utils.init()
-    main()
+    main(sys.argv[1])
