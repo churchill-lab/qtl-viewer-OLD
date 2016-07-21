@@ -40,11 +40,13 @@ def create_features(h5_root, filename, tsv=True):
     delim = '\t' if tsv else ','
 
     features = []
-    with open(filename, 'rb') as input:
+    # rU is universal newline mode
+    with open(filename, 'rU') as input:
         freader = csv.reader(input, delimiter=delim)
         for row in freader:
-            features.append((row[0], row[1], row[2], row[3], row[4] if len(row) > 4 else None, row[5] if len(row) > 5 else None))
+            features.append((row[0], row[1], row[2], row[3] if len(row[3]) > 0 else None, row[4] if len(row) > 4 else None, row[5] if len(row) > 5 else None))
 
+    np_features = np.array(features, dtype=dt_features)
     np_features = np.array(features, dtype=dt_features)
     h5_root.create_dataset('features', data=np_features)
 
@@ -81,23 +83,19 @@ def create_markers(h5_root, filename, tsv=True):
 def create_lod(h5_root, filename, tsv=True):
     logging.debug('{}/lod/lod: Using {}'.format(h5_root.name, ffilename(filename)))
 
-    delim = '\t' if tsv else ','
-
-    lod = []
-    max_columns = 0
-    with open(filename, 'rb') as input:
-        freader = csv.reader(input, delimiter=delim)
-        for row in freader:
-            lod.append(tuple(row))
-            max_columns = max(max_columns, len(row))
+    delim = r"\s+" if tsv else ','
 
     h5_root.create_group('lod')
-    np_lod = np.array(lod, dtype=np.dtype(float))
+    if tsv:
+        np_lod = np.loadtxt(filename)
+    else:
+        np_lod = np.loadtxt(filename, delimiter=',')
+
     h5_root.create_dataset('lod/lod', data=np_lod)
 
-    logging.debug('{}/lod/lod: Created: ({:,} x {:,})'.format(h5_root.name, len(lod), max_columns))
+    logging.debug('{}/lod/lod: Created: ({:,} x {:,})'.format(h5_root.name, np_lod.shape[0], np_lod.shape[1]))
 
-    return (len(lod), max_columns)
+    return np_lod.shape
 
 
 #

@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="{{request.URL_BASE}}/static/bootstrap-slider/css/bootstrap-slider.css">
     <link rel="stylesheet" href="{{request.URL_BASE}}/static/bootstrap-multiselect/css/bootstrap-multiselect.css">
     <link rel="stylesheet" href="{{request.URL_BASE}}/static/bootstrap-select/css/bootstrap-select.min.css">
-    <link rel="stylesheet" href="{{request.URL_BASE}}/static/jquery-fa-loading/jquery.faloading.min.css">
     <link rel="stylesheet" href="{{request.URL_BASE}}/static/css/style.css">
     <!--
     <link href='https://fonts.googleapis.com/css?family=Ubuntu' rel='stylesheet' type='text/css'>
@@ -196,7 +195,7 @@
     <!-- END SECOND ROW //-->
     {% if render_effect_plot %}
     <div class="row">
-        <div class="col-sm-12 margin-bottom-30">
+        <div class="col-sm-6 margin-bottom-30">
             <!-- START EFFECT PLOT //-->
             <div class="portlet">
                 <div class="portlet-title">
@@ -221,11 +220,9 @@
             </div>
             <!-- END EFFECT PLOT //-->
         </div>
-    </div>
     {% endif %}
     {% if render_fact_plot %}
-    <div class="row">
-        <div class="col-sm-12 margin-bottom-30">
+        <div class="col-sm-6 margin-bottom-30">
             <!-- RENDER FACT VIEWER //-->
             <div class="portlet">
                 <div class="portlet-title">
@@ -1285,7 +1282,7 @@ function drawMatrix(initialize) {
         if (_G.matrixLod) {
             return d[_settings.MATRIX.lod_score] > _G.lod;
         } else {
-            if (d[_settings.MATRIX.feature_chrom] === 'X') {
+            if (d[_settings.MATRIX.marker_chrom] === 'X') {
                 return d[_settings.MATRIX.lod_score] > _G.pvalueToLod[_G.dataset][['dfX']][_G.lod];
             } else {
                 return d[_settings.MATRIX.lod_score] > _G.pvalueToLod[_G.dataset]['dfA'][_G.lod];
